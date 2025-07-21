@@ -6,7 +6,7 @@ from dotenv import load_dotenv
 load_dotenv()
 
 # Get the database URL from environment variable
-DATABASE_URL = os.getenv("SUPABASE_URL")
+DATABASE_URL = os.getenv("DATABASE_URL")
 
 def get_db_connection():
     try:
@@ -189,4 +189,4 @@ def get_user_deeds(user_id):
 if DATABASE_URL:
     create_tables()
 else:
-    print("Warning: SUPABASE_URL environment variable not set") 
+    print("Warning: DATABASE_URL environment variable not set") 

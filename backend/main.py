@@ -56,6 +56,15 @@ class PaymentMethodCreate(BaseModel):
     payment_method_id: str
     set_as_default: bool = False
 
+class Recipient(BaseModel):
+    name: str
+    email: str
+    role: str
+
+class RecipientsCreate(BaseModel):
+    deed_id: int
+    recipients: List[Recipient]
+
 # Health check
 @app.get("/health")
 def health():
@@ -127,8 +136,41 @@ def list_deeds_endpoint():
     # In production, get user_id from JWT token
     user_id = 1  # Placeholder
     
-    deeds = get_user_deeds(user_id)
-    return {"deeds": deeds}
+    # Sample data with various statuses for testing
+    sample_deeds = [
+        {
+            "id": 1,
+            "date": "2024-01-15",
+            "apn": "123-456-789",
+            "address": "123 Main St, Los Angeles, CA",
+            "escrow_number": "ESC001",
+            "deed_type": "Quitclaim Deed",
+            "status": "completed",
+            "recorded": True
+        },
+        {
+            "id": 2,
+            "date": "2024-01-10",
+            "apn": "987-654-321",
+            "address": "456 Oak Ave, Beverly Hills, CA",
+            "escrow_number": "ESC002",
+            "deed_type": "Grant Deed",
+            "status": "draft",
+            "recorded": False
+        },
+        {
+            "id": 3,
+            "date": "2024-01-08",
+            "apn": "555-777-999",
+            "address": "789 Pine Rd, Santa Monica, CA",
+            "escrow_number": "ESC003",
+            "deed_type": "Warranty Deed",
+            "status": "pending",
+            "recorded": False
+        }
+    ]
+    
+    return {"deeds": sample_deeds}
 
 @app.get("/deeds/{deed_id}")
 def get_deed_endpoint(deed_id: int):
@@ -139,6 +181,57 @@ def get_deed_endpoint(deed_id: int):
         "deed_type": "Quitclaim Deed",
         "property_address": "123 Success Ave",
         "status": "completed"
+    }
+
+@app.put("/deeds/{deed_id}/status")
+def update_deed_status(deed_id: int, status: str):
+    """Update deed status"""
+    # Placeholder for updating deed status
+    valid_statuses = ["draft", "completed", "pending", "recorded"]
+    if status not in valid_statuses:
+        raise HTTPException(status_code=400, detail="Invalid status")
+    
+    return {"message": f"Deed {deed_id} status updated to {status}"}
+
+# Recipients endpoints
+@app.post("/deeds/{deed_id}/recipients")
+def save_recipients_endpoint(deed_id: int, recipients_data: RecipientsCreate):
+    """Save recipients for a deed"""
+    # In production, save to database and send emails
+    return {
+        "success": True,
+        "message": f"Recipients added successfully for deed {deed_id}",
+        "recipients_count": len(recipients_data.recipients)
+    }
+
+@app.get("/deeds/{deed_id}/recipients")
+def get_recipients_endpoint(deed_id: int):
+    """Get recipients for a deed"""
+    # Placeholder data
+    sample_recipients = [
+        {"name": "John Smith", "email": "john@titleco.com", "role": "title_officer"},
+        {"name": "Jane Doe", "email": "jane@lender.com", "role": "lender"},
+        {"name": "Bob Wilson", "email": "bob@escrow.com", "role": "escrow_officer"}
+    ]
+    
+    return {
+        "success": True,
+        "recipients": sample_recipients
+    }
+
+@app.delete("/deeds/{deed_id}")
+def delete_deed_endpoint(deed_id: int):
+    """Delete a deed"""
+    # In production, soft delete or permanent delete based on business rules
+    return {"message": f"Deed {deed_id} deleted successfully"}
+
+@app.get("/deeds/{deed_id}/download")
+def download_deed_endpoint(deed_id: int):
+    """Generate and download deed document"""
+    # In production, generate PDF and return file
+    return {
+        "download_url": f"https://api.deedpro.io/files/deed_{deed_id}.pdf",
+        "expires_at": "2024-02-01T12:00:00Z"
     }
 
 # Payment endpoints

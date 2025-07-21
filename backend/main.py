@@ -1,5 +1,5 @@
 import os
-from fastapi import FastAPI, HTTPException, Depends
+from fastapi import FastAPI, HTTPException, Depends, Query
 from fastapi.middleware.cors import CORSMiddleware
 from dotenv import load_dotenv
 from pydantic import BaseModel
@@ -42,6 +42,15 @@ class UserUpdate(BaseModel):
     city: Optional[str] = None
     country: Optional[str] = None
 
+class AdminUserUpdate(BaseModel):
+    first_name: Optional[str] = None
+    last_name: Optional[str] = None
+    username: Optional[str] = None
+    city: Optional[str] = None
+    country: Optional[str] = None
+    is_active: Optional[bool] = None
+    subscription_status: Optional[str] = None
+
 class DeedCreate(BaseModel):
     deed_type: str
     property_address: Optional[str] = None
@@ -78,12 +87,383 @@ class ApprovalResponse(BaseModel):
     approved: bool
     comments: Optional[str] = None
 
+# Mock admin check (in production, use JWT token verification)
+def verify_admin():
+    # In production, verify admin role from JWT token
+    return True
+
 # Health check
 @app.get("/health")
 def health():
     return {"status": "ok", "message": "DeedPro API is running"}
 
-# User endpoints
+# ============================================================================
+# ADMIN ENDPOINTS - Platform Management
+# ============================================================================
+
+@app.get("/admin/dashboard")
+def admin_dashboard():
+    """Get admin dashboard overview with key metrics"""
+    if not verify_admin():
+        raise HTTPException(status_code=403, detail="Admin access required")
+    
+    # In production, calculate real metrics from database
+    dashboard_data = {
+        "total_users": 1247,
+        "active_users": 892,
+        "total_deeds": 3456,
+        "deeds_this_month": 234,
+        "total_revenue": 45230.50,
+        "monthly_revenue": 8750.25,
+        "subscription_breakdown": {
+            "free": 456,
+            "basic": 523,
+            "pro": 268
+        },
+        "recent_activity": [
+            {"type": "user_signup", "user": "john@example.com", "timestamp": "2024-01-15T10:30:00Z"},
+            {"type": "deed_created", "user": "jane@company.com", "deed_id": 1234, "timestamp": "2024-01-15T09:45:00Z"},
+            {"type": "subscription", "user": "bob@firm.com", "plan": "pro", "timestamp": "2024-01-15T08:20:00Z"}
+        ],
+        "growth_metrics": {
+            "user_growth_rate": 12.5,  # % this month
+            "revenue_growth_rate": 8.3,
+            "deed_completion_rate": 87.2
+        }
+    }
+    
+    return dashboard_data
+
+@app.get("/admin/users")
+def admin_list_all_users(
+    page: int = Query(1, ge=1),
+    limit: int = Query(50, ge=1, le=100),
+    search: Optional[str] = None,
+    status: Optional[str] = None
+):
+    """List all users with pagination and filtering"""
+    if not verify_admin():
+        raise HTTPException(status_code=403, detail="Admin access required")
+    
+    # Mock user data - in production, query from database
+    all_users = [
+        {
+            "id": 1,
+            "email": "john@example.com",
+            "first_name": "John",
+            "last_name": "Doe",
+            "username": "johndoe",
+            "city": "Los Angeles",
+            "country": "USA",
+            "created_at": "2024-01-01T00:00:00Z",
+            "last_login": "2024-01-15T09:30:00Z",
+            "is_active": True,
+            "subscription_plan": "pro",
+            "subscription_status": "active",
+            "total_deeds": 12,
+            "monthly_revenue": 29.99
+        },
+        {
+            "id": 2,
+            "email": "jane@company.com",
+            "first_name": "Jane",
+            "last_name": "Smith",
+            "username": "janesmith",
+            "city": "San Francisco",
+            "country": "USA",
+            "created_at": "2024-01-05T00:00:00Z",
+            "last_login": "2024-01-14T15:20:00Z",
+            "is_active": True,
+            "subscription_plan": "basic",
+            "subscription_status": "active",
+            "total_deeds": 8,
+            "monthly_revenue": 9.99
+        },
+        {
+            "id": 3,
+            "email": "bob@firm.com",
+            "first_name": "Bob",
+            "last_name": "Wilson",
+            "username": "bobwilson",
+            "city": "Chicago",
+            "country": "USA",
+            "created_at": "2024-01-10T00:00:00Z",
+            "last_login": "2024-01-13T11:45:00Z",
+            "is_active": False,
+            "subscription_plan": "free",
+            "subscription_status": "cancelled",
+            "total_deeds": 3,
+            "monthly_revenue": 0.00
+        }
+    ]
+    
+    # Apply filters (in production, use database queries)
+    filtered_users = all_users
+    if search:
+        filtered_users = [u for u in filtered_users if search.lower() in u['email'].lower() or search.lower() in f"{u['first_name']} {u['last_name']}".lower()]
+    if status:
+        filtered_users = [u for u in filtered_users if u['subscription_status'] == status]
+    
+    # Pagination
+    start = (page - 1) * limit
+    end = start + limit
+    paginated_users = filtered_users[start:end]
+    
+    return {
+        "users": paginated_users,
+        "total": len(filtered_users),
+        "page": page,
+        "limit": limit,
+        "total_pages": (len(filtered_users) + limit - 1) // limit
+    }
+
+@app.get("/admin/users/{user_id}")
+def admin_get_user_details(user_id: int):
+    """Get detailed information about a specific user"""
+    if not verify_admin():
+        raise HTTPException(status_code=403, detail="Admin access required")
+    
+    # Mock user detail data
+    user_details = {
+        "id": user_id,
+        "email": "john@example.com",
+        "first_name": "John",
+        "last_name": "Doe",
+        "username": "johndoe",
+        "city": "Los Angeles",
+        "country": "USA",
+        "created_at": "2024-01-01T00:00:00Z",
+        "last_login": "2024-01-15T09:30:00Z",
+        "is_active": True,
+        "subscription_plan": "pro",
+        "subscription_status": "active",
+        "subscription_start": "2024-01-01T00:00:00Z",
+        "next_billing_date": "2024-02-01T00:00:00Z",
+        "total_revenue": 89.97,
+        "payment_methods": [
+            {"id": "pm_123", "brand": "visa", "last4": "1234", "is_default": True}
+        ],
+        "deed_statistics": {
+            "total_deeds": 12,
+            "completed_deeds": 10,
+            "draft_deeds": 2,
+            "shared_deeds": 8,
+            "approved_deeds": 6
+        },
+        "activity_log": [
+            {"action": "login", "timestamp": "2024-01-15T09:30:00Z", "ip": "192.168.1.1"},
+            {"action": "deed_created", "timestamp": "2024-01-14T14:20:00Z", "deed_id": 1234},
+            {"action": "deed_shared", "timestamp": "2024-01-13T11:15:00Z", "deed_id": 1233}
+        ]
+    }
+    
+    return user_details
+
+@app.put("/admin/users/{user_id}")
+def admin_update_user(user_id: int, user_update: AdminUserUpdate):
+    """Update user information (admin only)"""
+    if not verify_admin():
+        raise HTTPException(status_code=403, detail="Admin access required")
+    
+    # In production, update user in database
+    return {
+        "success": True,
+        "message": f"User {user_id} updated successfully",
+        "updated_fields": user_update.dict(exclude_unset=True)
+    }
+
+@app.delete("/admin/users/{user_id}")
+def admin_delete_user(user_id: int):
+    """Delete/deactivate a user (admin only)"""
+    if not verify_admin():
+        raise HTTPException(status_code=403, detail="Admin access required")
+    
+    # In production, soft delete or deactivate user
+    return {
+        "success": True,
+        "message": f"User {user_id} has been deactivated"
+    }
+
+@app.get("/admin/deeds")
+def admin_list_all_deeds(
+    page: int = Query(1, ge=1),
+    limit: int = Query(50, ge=1, le=100),
+    status: Optional[str] = None,
+    user_id: Optional[int] = None
+):
+    """List all deeds across all users"""
+    if not verify_admin():
+        raise HTTPException(status_code=403, detail="Admin access required")
+    
+    # Mock deed data - in production, query from database
+    all_deeds = [
+        {
+            "id": 1,
+            "user_id": 1,
+            "user_email": "john@example.com",
+            "user_name": "John Doe",
+            "deed_type": "Quitclaim Deed",
+            "property_address": "123 Main St, Los Angeles, CA",
+            "apn": "123-456-789",
+            "status": "completed",
+            "created_at": "2024-01-10T00:00:00Z",
+            "completed_at": "2024-01-12T00:00:00Z",
+            "recorded": True,
+            "shared_count": 2,
+            "approval_count": 1
+        },
+        {
+            "id": 2,
+            "user_id": 2,
+            "user_email": "jane@company.com",
+            "user_name": "Jane Smith",
+            "deed_type": "Grant Deed",
+            "property_address": "456 Oak Ave, Beverly Hills, CA",
+            "apn": "987-654-321",
+            "status": "draft",
+            "created_at": "2024-01-14T00:00:00Z",
+            "completed_at": None,
+            "recorded": False,
+            "shared_count": 0,
+            "approval_count": 0
+        }
+    ]
+    
+    # Apply filters
+    filtered_deeds = all_deeds
+    if status:
+        filtered_deeds = [d for d in filtered_deeds if d['status'] == status]
+    if user_id:
+        filtered_deeds = [d for d in filtered_deeds if d['user_id'] == user_id]
+    
+    # Pagination
+    start = (page - 1) * limit
+    end = start + limit
+    paginated_deeds = filtered_deeds[start:end]
+    
+    return {
+        "deeds": paginated_deeds,
+        "total": len(filtered_deeds),
+        "page": page,
+        "limit": limit,
+        "total_pages": (len(filtered_deeds) + limit - 1) // limit
+    }
+
+@app.get("/admin/revenue")
+def admin_revenue_analytics():
+    """Get detailed revenue analytics"""
+    if not verify_admin():
+        raise HTTPException(status_code=403, detail="Admin access required")
+    
+    # Mock revenue data - in production, calculate from database/Stripe
+    revenue_data = {
+        "overview": {
+            "total_revenue": 45230.50,
+            "monthly_revenue": 8750.25,
+            "daily_revenue": 291.67,
+            "average_revenue_per_user": 36.29
+        },
+        "monthly_breakdown": [
+            {"month": "2024-01", "revenue": 8750.25, "new_subscriptions": 23, "cancellations": 5},
+            {"month": "2023-12", "revenue": 8120.00, "new_subscriptions": 19, "cancellations": 8},
+            {"month": "2023-11", "revenue": 7890.75, "new_subscriptions": 31, "cancellations": 3}
+        ],
+        "subscription_revenue": {
+            "free": {"count": 456, "revenue": 0.00},
+            "basic": {"count": 523, "revenue": 5229.77},
+            "pro": {"count": 268, "revenue": 8032.32}
+        },
+        "payment_methods": {
+            "credit_card": {"count": 678, "revenue": 12450.23},
+            "paypal": {"count": 113, "revenue": 1300.86}
+        },
+        "top_paying_users": [
+            {"user_id": 1, "email": "john@example.com", "total_paid": 359.88},
+            {"user_id": 45, "email": "sarah@lawfirm.com", "total_paid": 299.88},
+            {"user_id": 23, "email": "mike@realty.com", "total_paid": 239.91}
+        ],
+        "refunds": {
+            "total_refunded": 234.50,
+            "refund_count": 8,
+            "refund_rate": 0.52  # percentage
+        }
+    }
+    
+    return revenue_data
+
+@app.get("/admin/analytics")
+def admin_platform_analytics():
+    """Get comprehensive platform analytics"""
+    if not verify_admin():
+        raise HTTPException(status_code=403, detail="Admin access required")
+    
+    analytics_data = {
+        "user_metrics": {
+            "total_users": 1247,
+            "active_users_30d": 892,
+            "new_users_7d": 23,
+            "user_retention_rate": 78.5,
+            "average_session_duration": "12:34"
+        },
+        "deed_metrics": {
+            "total_deeds": 3456,
+            "completed_deeds": 2891,
+            "draft_deeds": 565,
+            "completion_rate": 83.6,
+            "average_completion_time": "2.3 days"
+        },
+        "sharing_metrics": {
+            "total_shares": 1234,
+            "approval_rate": 76.8,
+            "average_response_time": "1.2 days",
+            "most_shared_deed_type": "Quitclaim Deed"
+        },
+        "geographic_distribution": [
+            {"state": "California", "user_count": 423, "deed_count": 1234},
+            {"state": "Texas", "user_count": 298, "deed_count": 876},
+            {"state": "Florida", "user_count": 187, "deed_count": 543}
+        ],
+        "performance_metrics": {
+            "api_response_time": "145ms",
+            "uptime": "99.8%",
+            "error_rate": "0.12%"
+        }
+    }
+    
+    return analytics_data
+
+@app.get("/admin/system-health")
+def admin_system_health():
+    """Get system health and status information"""
+    if not verify_admin():
+        raise HTTPException(status_code=403, detail="Admin access required")
+    
+    health_data = {
+        "status": "healthy",
+        "timestamp": datetime.now().isoformat(),
+        "services": {
+            "api": {"status": "up", "response_time": "145ms"},
+            "database": {"status": "up", "connections": 23, "max_connections": 100},
+            "stripe": {"status": "up", "last_webhook": "2024-01-15T09:45:00Z"},
+            "email": {"status": "up", "queue_size": 5}
+        },
+        "resources": {
+            "cpu_usage": "34%",
+            "memory_usage": "67%",
+            "disk_usage": "45%"
+        },
+        "recent_errors": [
+            {"timestamp": "2024-01-15T08:30:00Z", "level": "warning", "message": "High memory usage detected"},
+            {"timestamp": "2024-01-14T22:15:00Z", "level": "error", "message": "Payment webhook failed for user 456"}
+        ]
+    }
+    
+    return health_data
+
+# ============================================================================
+# USER ENDPOINTS - Regular User Operations
+# ============================================================================
+
 @app.post("/users")
 def create_user_endpoint(user: UserCreate):
     """Create a new user"""

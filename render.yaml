@@ -1,0 +1,24 @@
+services:
+  - type: web
+    name: deedpro-backend
+    env: python
+    buildCommand: "cd backend && pip install -r requirements.txt"
+    startCommand: "cd backend && python main.py"
+    plan: starter
+    healthCheckPath: /health
+    envVars:
+      - key: SUPABASE_URL
+        sync: false
+      - key: SUPABASE_KEY
+        sync: false
+      - key: STRIPE_SECRET_KEY
+        sync: false
+      - key: STRIPE_PUBLISHABLE_KEY
+        sync: false
+      - key: PYTHON_VERSION
+        value: "3.11"
+    scaling:
+      minInstances: 1
+      maxInstances: 3
+    domains:
+      - deedpro-api.onrender.com 

@@ -5,10 +5,10 @@ from dotenv import load_dotenv
 
 load_dotenv()
 
+# Get the database URL from environment variable
 DATABASE_URL = os.getenv("SUPABASE_URL")
 
 def get_db_connection():
-    """Get database connection to Supabase Postgres"""
     try:
         conn = psycopg2.connect(DATABASE_URL, cursor_factory=RealDictCursor)
         return conn
@@ -17,7 +17,6 @@ def get_db_connection():
         return None
 
 def create_tables():
-    """Create necessary tables if they don't exist"""
     conn = get_db_connection()
     if not conn:
         return False
@@ -25,7 +24,7 @@ def create_tables():
     try:
         cursor = conn.cursor()
         
-        # Users table
+        # Create users table
         cursor.execute("""
             CREATE TABLE IF NOT EXISTS users (
                 id SERIAL PRIMARY KEY,
@@ -40,32 +39,32 @@ def create_tables():
             )
         """)
         
-        # Deeds table
+        # Create deeds table
         cursor.execute("""
             CREATE TABLE IF NOT EXISTS deeds (
                 id SERIAL PRIMARY KEY,
                 user_id INTEGER REFERENCES users(id),
                 deed_type VARCHAR(100),
                 property_address TEXT,
-                apn VARCHAR(100),
+                apn VARCHAR(50),
                 county VARCHAR(100),
                 legal_description TEXT,
-                owner_type TEXT,
+                owner_type VARCHAR(100),
                 sales_price DECIMAL(15,2),
                 grantee_name VARCHAR(255),
-                vesting TEXT,
+                vesting VARCHAR(255),
                 status VARCHAR(50) DEFAULT 'draft',
                 created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
                 updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
             )
         """)
         
-        # Payment methods table
+        # Create payment_methods table
         cursor.execute("""
             CREATE TABLE IF NOT EXISTS payment_methods (
                 id SERIAL PRIMARY KEY,
                 user_id INTEGER REFERENCES users(id),
-                stripe_payment_method_id VARCHAR(255),
+                stripe_payment_method_id VARCHAR(100),
                 card_brand VARCHAR(50),
                 last_four VARCHAR(4),
                 is_default BOOLEAN DEFAULT FALSE,
@@ -77,13 +76,15 @@ def create_tables():
         cursor.close()
         conn.close()
         return True
+        
     except Exception as e:
         print(f"Error creating tables: {e}")
+        if conn:
+            conn.close()
         return False
 
-# User operations
+# User functions
 def create_user(email, first_name, last_name, username=None, city=None, country=None):
-    """Create a new user"""
     conn = get_db_connection()
     if not conn:
         return None
@@ -93,7 +94,7 @@ def create_user(email, first_name, last_name, username=None, city=None, country=
         cursor.execute("""
             INSERT INTO users (email, first_name, last_name, username, city, country)
             VALUES (%s, %s, %s, %s, %s, %s)
-            RETURNING id, email, first_name, last_name, username, city, country, created_at
+            RETURNING *
         """, (email, first_name, last_name, username, city, country))
         
         user = cursor.fetchone()
@@ -101,12 +102,14 @@ def create_user(email, first_name, last_name, username=None, city=None, country=
         cursor.close()
         conn.close()
         return dict(user) if user else None
+        
     except Exception as e:
         print(f"Error creating user: {e}")
+        if conn:
+            conn.close()
         return None
 
 def get_user_by_email(email):
-    """Get user by email"""
     conn = get_db_connection()
     if not conn:
         return None
@@ -118,13 +121,15 @@ def get_user_by_email(email):
         cursor.close()
         conn.close()
         return dict(user) if user else None
+        
     except Exception as e:
         print(f"Error getting user: {e}")
+        if conn:
+            conn.close()
         return None
 
-# Deed operations
+# Deed functions
 def create_deed(user_id, deed_data):
-    """Create a new deed"""
     conn = get_db_connection()
     if not conn:
         return None
@@ -137,10 +142,16 @@ def create_deed(user_id, deed_data):
             VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
             RETURNING *
         """, (
-            user_id, deed_data.get('deed_type'), deed_data.get('property_address'),
-            deed_data.get('apn'), deed_data.get('county'), deed_data.get('legal_description'),
-            deed_data.get('owner_type'), deed_data.get('sales_price'),
-            deed_data.get('grantee_name'), deed_data.get('vesting')
+            user_id, 
+            deed_data.get('deed_type'),
+            deed_data.get('property_address'),
+            deed_data.get('apn'),
+            deed_data.get('county'),
+            deed_data.get('legal_description'),
+            deed_data.get('owner_type'),
+            deed_data.get('sales_price'),
+            deed_data.get('grantee_name'),
+            deed_data.get('vesting')
         ))
         
         deed = cursor.fetchone()
@@ -148,12 +159,14 @@ def create_deed(user_id, deed_data):
         cursor.close()
         conn.close()
         return dict(deed) if deed else None
+        
     except Exception as e:
         print(f"Error creating deed: {e}")
+        if conn:
+            conn.close()
         return None
 
 def get_user_deeds(user_id):
-    """Get all deeds for a user"""
     conn = get_db_connection()
     if not conn:
         return []
@@ -164,10 +177,16 @@ def get_user_deeds(user_id):
         deeds = cursor.fetchall()
         cursor.close()
         conn.close()
-        return [dict(deed) for deed in deeds]
+        return [dict(deed) for deed in deeds] if deeds else []
+        
     except Exception as e:
-        print(f"Error getting deeds: {e}")
+        print(f"Error getting user deeds: {e}")
+        if conn:
+            conn.close()
         return []
 
-# Initialize tables on module import
-create_tables() 
+# Initialize database tables on module import
+if DATABASE_URL:
+    create_tables()
+else:
+    print("Warning: SUPABASE_URL environment variable not set") 

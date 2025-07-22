@@ -1,0 +1,401 @@
+'use client';
+
+import React, { useState } from 'react';
+import Sidebar from '../../components/Sidebar';
+import '../../styles/dashboard.css';
+
+export default function CreateDeed() {
+  const [currentStep, setCurrentStep] = useState(1);
+  const [formData, setFormData] = useState({
+    deedType: '',
+    propertySearch: '',
+    apn: '',
+    county: '',
+    legalDescription: '',
+    ownerType: '',
+    salesPrice: '',
+    granteeName: '',
+    vesting: ''
+  });
+
+  const steps = [
+    { 
+      id: 1, 
+      title: 'Deed Type', 
+      icon: <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor"><path d="M14,2H6A2,2 0 0,0 4,4V20A2,2 0 0,0 6,22H18A2,2 0 0,0 20,20V8L14,2M18,20H6V4H13V9H18V20Z"/></svg>
+    },
+    { 
+      id: 2, 
+      title: 'Property Info', 
+      icon: <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor"><path d="M10 20v-6h4v6h5v-8h3L12 3 2 12h3v8z"/></svg>
+    },
+    { 
+      id: 3, 
+      title: 'Parties', 
+      icon: <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor"><path d="M12,5.5A3.5,3.5 0 0,1 15.5,9A3.5,3.5 0 0,1 12,12.5A3.5,3.5 0 0,1 8.5,9A3.5,3.5 0 0,1 12,5.5M5,8C5.56,8 6.08,8.15 6.53,8.42C6.38,9.85 6.8,11.27 7.66,12.38C7.16,13.34 6.16,14 5,14A3,3 0 0,1 2,11A3,3 0 0,1 5,8M19,8A3,3 0 0,1 22,11A3,3 0 0,1 19,14C17.84,14 16.84,13.34 16.34,12.38C17.2,11.27 17.62,9.85 17.47,8.42C17.92,8.15 18.44,8 19,8M5.5,18.25C5.5,16.18 8.41,14.5 12,14.5C15.59,14.5 18.5,16.18 18.5,18.25V20H5.5V18.25M0,20V18.5C0,17.11 1.89,15.94 4.45,15.6C3.86,16.28 3.5,17.22 3.5,18.25V20H0M24,20H20.5V18.25C20.5,17.22 20.14,16.28 19.55,15.6C22.11,15.94 24,17.11 24,18.5V20Z"/></svg>
+    },
+    { 
+      id: 4, 
+      title: 'Details', 
+      icon: <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor"><path d="M7,15H9C9,16.08 10.37,17 12,17C13.63,17 15,16.08 15,15C15,13.9 13.96,13.5 11.76,12.97C9.64,12.44 7,11.78 7,9C7,7.21 8.47,5.69 10.5,5.18V3H13.5V5.18C15.53,5.69 17,7.21 17,9H15C15,7.92 13.63,7 12,7C10.37,7 9,7.92 9,9C9,10.1 10.04,10.5 12.24,11.03C14.36,11.56 17,12.22 17,15C17,16.79 15.53,18.31 13.5,18.82V21H10.5V18.82C8.47,18.31 7,16.79 7,15Z"/></svg>
+    },
+    { 
+      id: 5, 
+      title: 'Review', 
+      icon: <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor"><path d="M21,7L9,19L3.5,13.5L4.91,12.09L9,16.17L19.59,5.59L21,7Z"/></svg>
+    }
+  ];
+
+  const deedTypes = [
+    {
+      type: 'Quitclaim Deed',
+      icon: <svg width="32" height="32" viewBox="0 0 24 24" fill="currentColor"><path d="M9,5V9H21V5M9,19H21V15H9M9,14H21V10H9M4,9H8L6,7M4,19H8L6,17M4,14H8L6,12"/></svg>,
+      description: 'Transfer ownership without warranty. Quick and simple for family transfers.',
+      popular: false
+    },
+    {
+      type: 'Grant Deed',
+      icon: <svg width="32" height="32" viewBox="0 0 24 24" fill="currentColor"><path d="M14,2H6A2,2 0 0,0 4,4V20A2,2 0 0,0 6,22H18A2,2 0 0,0 20,20V8L14,2M18,20H6V4H13V9H18V20Z"/><path d="M8,13V15H16V13H8M8,10V12H13V10H8Z"/></svg>,
+      description: 'Standard ownership transfer with basic warranties. Most common type.',
+      popular: true
+    },
+    {
+      type: 'Warranty Deed',
+      icon: <svg width="32" height="32" viewBox="0 0 24 24" fill="currentColor"><path d="M12,1L3,5V11C3,16.55 6.84,21.74 12,23C17.16,21.74 21,16.55 21,11V5L12,1M10,17L6,13L7.41,11.59L10,14.17L16.59,7.58L18,9L10,17Z"/></svg>,
+      description: 'Full warranty protection for buyer. Maximum legal protection.',
+      popular: false
+    },
+    {
+      type: 'Trust Transfer Deed',
+      icon: <svg width="32" height="32" viewBox="0 0 24 24" fill="currentColor"><path d="M12,2A10,10 0 0,1 22,12A10,10 0 0,1 12,22A10,10 0 0,1 2,12A10,10 0 0,1 12,2M17,18V16H7V18H17M7,12V14H17V12H7M17,6V8H7V6H17Z"/></svg>,
+      description: 'Transfer property to or from a trust. Estate planning purposes.',
+      popular: false
+    }
+  ];
+
+  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
+    setFormData({
+      ...formData,
+      [e.target.name]: e.target.value
+    });
+  };
+
+  const nextStep = () => {
+    if (currentStep < 5) setCurrentStep(currentStep + 1);
+  };
+
+  const prevStep = () => {
+    if (currentStep > 1) setCurrentStep(currentStep - 1);
+  };
+
+  const selectDeedType = (type: string) => {
+    setFormData({ ...formData, deedType: type });
+  };
+
+  return (
+    <div style={{ display: 'flex' }}>
+      <Sidebar />
+      <div className="main-content">
+        <div className="wizard-container">
+          
+          {/* Header */}
+          <div className="wizard-header">
+            <h1 className="wizard-title">Create Your Deed</h1>
+            <p className="wizard-subtitle">Professional property transfer documents in minutes</p>
+          </div>
+
+          {/* Progress Bar */}
+          <div className="progress-bar">
+            {steps.map((step) => (
+              <div 
+                key={step.id}
+                className={`progress-step ${currentStep >= step.id ? 'active' : ''} ${currentStep > step.id ? 'completed' : ''}`}
+              >
+                <div className="progress-step-circle">
+                  {currentStep > step.id ? 
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor"><path d="M21,7L9,19L3.5,13.5L4.91,12.09L9,16.17L19.59,5.59L21,7Z"/></svg>
+                    : step.icon}
+                </div>
+                <div className="progress-step-label">{step.title}</div>
+              </div>
+            ))}
+          </div>
+
+          {/* Step Content */}
+          <div className="form-steps">
+            
+            {/* Step 1: Deed Type Selection */}
+            <div className={`form-step ${currentStep === 1 ? 'active' : ''}`}>
+              <div className="step-content">
+                <h2 className="step-title">Select Your Deed Type</h2>
+                <p className="step-description">
+                  Choose the type of deed that best fits your transfer needs. Each type offers different levels of protection.
+                </p>
+                
+                <div className="deed-type-grid">
+                  {deedTypes.map((deed) => (
+                    <div
+                      key={deed.type}
+                      className={`deed-type-card ${formData.deedType === deed.type ? 'selected' : ''}`}
+                      onClick={() => selectDeedType(deed.type)}
+                    >
+                      {deed.popular && (
+                        <div style={{
+                          position: 'absolute',
+                          top: '1rem',
+                          right: '1rem',
+                          background: 'var(--accent)',
+                          color: 'var(--primary-dark)',
+                          padding: '0.5rem 1rem',
+                          borderRadius: '12px',
+                          fontSize: '0.875rem',
+                          fontWeight: '600'
+                        }}>
+                          POPULAR
+                        </div>
+                      )}
+                      <div className="deed-type-icon">{deed.icon}</div>
+                      <h3 className="deed-type-title">{deed.type}</h3>
+                      <p className="deed-type-description">{deed.description}</p>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </div>
+
+            {/* Step 2: Property Information */}
+            <div className={`form-step ${currentStep === 2 ? 'active' : ''}`}>
+              <div className="step-content">
+                <h2 className="step-title">Property Information</h2>
+                <p className="step-description">
+                  Enter the property details to identify the real estate being transferred.
+                </p>
+                
+                <div style={{ display: 'grid', gap: '2rem', maxWidth: '600px', margin: '0 auto' }}>
+                  <div className="form-group">
+                    <label className="form-label">Property Address</label>
+                    <input
+                      type="text"
+                      name="propertySearch"
+                      className="form-control"
+                      placeholder="123 Main Street, Los Angeles, CA 90210"
+                      value={formData.propertySearch}
+                      onChange={handleInputChange}
+                    />
+                  </div>
+                  
+                  <div className="form-group">
+                    <label className="form-label">APN (Assessor Parcel Number)</label>
+                    <input
+                      type="text"
+                      name="apn"
+                      className="form-control"
+                      placeholder="123-456-789"
+                      value={formData.apn}
+                      onChange={handleInputChange}
+                    />
+                  </div>
+                  
+                  <div className="form-group">
+                    <label className="form-label">County</label>
+                    <select
+                      name="county"
+                      className="form-control"
+                      value={formData.county}
+                      onChange={handleInputChange}
+                    >
+                      <option value="">Select County</option>
+                      <option value="Los Angeles">Los Angeles</option>
+                      <option value="Orange">Orange</option>
+                      <option value="San Diego">San Diego</option>
+                      <option value="Riverside">Riverside</option>
+                      <option value="San Bernardino">San Bernardino</option>
+                    </select>
+                  </div>
+                  
+                  <div className="form-group">
+                    <label className="form-label">Legal Description (Optional)</label>
+                    <textarea
+                      name="legalDescription"
+                      className="form-control"
+                      rows={4}
+                      placeholder="Enter detailed legal description if available..."
+                      value={formData.legalDescription}
+                      onChange={handleInputChange}
+                    />
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* Step 3: Parties */}
+            <div className={`form-step ${currentStep === 3 ? 'active' : ''}`}>
+              <div className="step-content">
+                <h2 className="step-title">Parties Involved</h2>
+                <p className="step-description">
+                  Specify the grantor (seller) and grantee (buyer) information.
+                </p>
+                
+                <div style={{ display: 'grid', gap: '2rem', maxWidth: '600px', margin: '0 auto' }}>
+                  <div className="form-group">
+                    <label className="form-label">Ownership Type</label>
+                    <select
+                      name="ownerType"
+                      className="form-control"
+                      value={formData.ownerType}
+                      onChange={handleInputChange}
+                    >
+                      <option value="">Select Ownership Type</option>
+                      <option value="Individual">Individual</option>
+                      <option value="Joint Tenants">Joint Tenants</option>
+                      <option value="Tenants in Common">Tenants in Common</option>
+                      <option value="Community Property">Community Property</option>
+                      <option value="Trust">Trust</option>
+                      <option value="Corporation">Corporation</option>
+                    </select>
+                  </div>
+                  
+                  <div className="form-group">
+                    <label className="form-label">Grantee Name(s)</label>
+                    <input
+                      type="text"
+                      name="granteeName"
+                      className="form-control"
+                      placeholder="Full legal name(s) of new owner(s)"
+                      value={formData.granteeName}
+                      onChange={handleInputChange}
+                    />
+                  </div>
+                  
+                  <div className="form-group">
+                    <label className="form-label">Vesting</label>
+                    <input
+                      type="text"
+                      name="vesting"
+                      className="form-control"
+                      placeholder="How title will be held (e.g., as joint tenants)"
+                      value={formData.vesting}
+                      onChange={handleInputChange}
+                    />
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* Step 4: Additional Details */}
+            <div className={`form-step ${currentStep === 4 ? 'active' : ''}`}>
+              <div className="step-content">
+                <h2 className="step-title">Transfer Details</h2>
+                <p className="step-description">
+                  Additional information required for the deed preparation.
+                </p>
+                
+                <div style={{ display: 'grid', gap: '2rem', maxWidth: '600px', margin: '0 auto' }}>
+                  <div className="form-group">
+                    <label className="form-label">Sales Price / Consideration</label>
+                    <input
+                      type="text"
+                      name="salesPrice"
+                      className="form-control"
+                      placeholder="$0 for gift, or actual sales price"
+                      value={formData.salesPrice}
+                      onChange={handleInputChange}
+                    />
+                  </div>
+                  
+                  <div style={{
+                    background: 'var(--gray-50)',
+                    border: '1px solid var(--gray-200)',
+                    borderRadius: '12px',
+                    padding: '2rem',
+                    textAlign: 'center'
+                  }}>
+                    <h4 style={{ color: 'var(--gray-700)', marginBottom: '1rem', fontSize: '1.25rem' }}>
+                      📋 Document Preparation
+                    </h4>
+                    <p style={{ color: 'var(--gray-600)', fontSize: '1rem', margin: 0, lineHeight: '1.6' }}>
+                      Your deed will be prepared by licensed professionals and ready for notarization and recording.
+                    </p>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* Step 5: Review */}
+            <div className={`form-step ${currentStep === 5 ? 'active' : ''}`}>
+              <div className="step-content">
+                <h2 className="step-title">Review & Confirm</h2>
+                <p className="step-description">
+                  Please review all information before generating your deed.
+                </p>
+                
+                <div style={{ maxWidth: '600px', margin: '0 auto' }}>
+                  <div style={{
+                    background: 'var(--gray-50)',
+                    border: '1px solid var(--gray-200)',
+                    borderRadius: '12px',
+                    padding: '2.5rem'
+                  }}>
+                    <div style={{ display: 'grid', gap: '1.5rem', fontSize: '1.125rem' }}>
+                      <div><strong>Deed Type:</strong> {formData.deedType || 'Not selected'}</div>
+                      <div><strong>Property:</strong> {formData.propertySearch || 'Not entered'}</div>
+                      <div><strong>APN:</strong> {formData.apn || 'Not entered'}</div>
+                      <div><strong>County:</strong> {formData.county || 'Not selected'}</div>
+                      <div><strong>Grantee:</strong> {formData.granteeName || 'Not entered'}</div>
+                      <div><strong>Consideration:</strong> {formData.salesPrice || 'Not entered'}</div>
+                    </div>
+                  </div>
+                  
+                  <div style={{
+                    marginTop: '2rem',
+                    padding: '2rem',
+                    background: 'var(--primary-dark)',
+                    borderRadius: '12px',
+                    color: 'white',
+                    textAlign: 'center'
+                  }}>
+                    <h4 style={{ margin: '0 0 1rem 0', fontSize: '1.5rem' }}>🎉 Ready to Generate</h4>
+                    <p style={{ margin: 0, opacity: 0.9, fontSize: '1.125rem', lineHeight: '1.6' }}>
+                      Your professional deed document will be created and ready for download.
+                    </p>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* Navigation */}
+          <div className="wizard-navigation">
+            <button
+              className="wizard-btn wizard-btn-secondary"
+              onClick={prevStep}
+              disabled={currentStep === 1}
+            >
+              ← Previous
+            </button>
+            
+            <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', color: 'var(--gray-500)', fontSize: '1.125rem' }}>
+              Step {currentStep} of {steps.length}
+            </div>
+            
+            {currentStep < 5 ? (
+              <button
+                className="wizard-btn wizard-btn-primary"
+                onClick={nextStep}
+              >
+                Next →
+              </button>
+            ) : (
+              <button
+                className="wizard-btn wizard-btn-primary"
+                onClick={() => alert('Deed generation coming soon!')}
+              >
+                Generate Deed ✨
+              </button>
+            )}
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+} 

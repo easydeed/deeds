@@ -1107,6 +1107,23 @@ export default function HomePage() {
             grid-template-columns: 1fr;
           }
         }
+
+        .login-button {
+          display: inline-block;
+          background: var(--accent);
+          color: white;
+          padding: 12px 24px;
+          border-radius: 8px;
+          text-decoration: none;
+          font-weight: 600;
+          transition: all 0.3s ease;
+          margin-top: 20px;
+        }
+
+        .login-button:hover {
+          background: var(--accent-dark);
+          transform: translateY(-2px);
+        }
       `}</style>
     </div>
   );

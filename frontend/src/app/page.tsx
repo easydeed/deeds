@@ -41,6 +41,10 @@ export default function HomePage() {
                 </button>
               </div>
             </div>
+
+            <Link href="/login" className="login-button" data-aos="fade-in" data-aos-duration="1500">
+              LOGIN
+            </Link>
           </div>
         </div>
 

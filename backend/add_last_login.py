@@ -54,7 +54,11 @@ if __name__ == "__main__":
     print("🔧 Add Last Login Column")
     print("=" * 30)
     
-    # Use the known database URL
-    database_url = "postgresql://deedpro_user:4MkRMdYMHnnoUwvD03rI3kVfjMLwV6j3@dpg-d208q5umcj7s73as68g0-a.ohio-postgres.render.com/deedpro"
+    # Get database URL from user input instead of hardcoding
+    database_url = input("\n📝 Please paste your Render PostgreSQL External Database URL: ").strip()
+    
+    if not database_url.startswith('postgresql://'):
+        print("❌ Invalid database URL. It should start with 'postgresql://'")
+        sys.exit(1)
     
     add_last_login_column(database_url) 

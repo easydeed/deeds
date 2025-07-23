@@ -95,7 +95,12 @@ if __name__ == "__main__":
     print("🔄 Database Connection Reset & Fix")
     print("=" * 40)
     
-    database_url = "postgresql://deedpro_user:4MkRMdYMHnnoUwvD03rI3kVfjMLwV6j3@dpg-d208q5umcj7s73as68g0-a.ohio-postgres.render.com/deedpro"
+    # Get database URL from user input instead of hardcoding
+    database_url = input("\n📝 Please paste your Render PostgreSQL External Database URL: ").strip()
+    
+    if not database_url.startswith('postgresql://'):
+        print("❌ Invalid database URL. It should start with 'postgresql://'")
+        sys.exit(1)
     
     success = reset_and_fix_database(database_url)
     

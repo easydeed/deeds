@@ -64,7 +64,10 @@ export default function Features() {
     }
   ];
 
-  const FeatureCard = ({ feature, gradient }: { feature: any, gradient: string }) => (
+  const FeatureCard = ({ feature, gradient }: { 
+    feature: { title: string; description: string; icon: string; badge: string }, 
+    gradient: string 
+  }) => (
     <div className={`relative p-6 rounded-2xl border hover:shadow-xl transition-all duration-300 transform hover:-translate-y-1 bg-gradient-to-br ${gradient}`}>
       <div className="absolute top-4 right-4">
         <span className="bg-white/90 text-gray-700 px-2 py-1 rounded-full text-xs font-semibold">

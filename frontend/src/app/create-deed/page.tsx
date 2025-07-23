@@ -223,7 +223,7 @@ export default function CreateDeed() {
   });
 
   // Plan limits state
-  const [userProfile, setUserProfile] = useState(null);
+  const [userProfile, setUserProfile] = useState<{plan?: string} | null>(null);
   const [planLimitsError, setPlanLimitsError] = useState('');
   const [isGenerating, setIsGenerating] = useState(false);
   const [deedUsageCount, setDeedUsageCount] = useState(0);

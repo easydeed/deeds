@@ -4,6 +4,14 @@ import React, { useState, useEffect } from 'react';
 import Sidebar from '../../components/Sidebar';
 import '../../styles/dashboard.css';
 
+interface UserProfile {
+  plan: string;
+  plan_limits?: {
+    max_deeds_per_month: number;
+    api_calls_per_month: number;
+  };
+}
+
 export default function AccountSettings() {
   const [activeTab, setActiveTab] = useState('profile');
   const [formData, setFormData] = useState({
@@ -19,7 +27,7 @@ export default function AccountSettings() {
   });
 
   // Plan management state
-  const [userProfile, setUserProfile] = useState(null);
+  const [userProfile, setUserProfile] = useState<UserProfile | null>(null);
   const [loading, setLoading] = useState(false);
   const [upgradeLoading, setUpgradeLoading] = useState(false);
 
@@ -96,7 +104,7 @@ export default function AccountSettings() {
     }
   };
 
-  const handleUpgrade = async (planKey: any) => {
+  const handleUpgrade = async (planKey: string) => {
     setUpgradeLoading(true);
     try {
       const token = localStorage.getItem('access_token');

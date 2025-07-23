@@ -2,6 +2,16 @@
 
 import React from 'react';
 
+interface Notification {
+  id: number;
+  type: 'info' | 'warning' | 'error' | 'success';
+  title: string;
+  message: string;
+  timestamp: string;
+  read: boolean;
+  action_url?: string;
+}
+
 interface AdminSidebarProps {
   activeTab: string;
   setActiveTab: (tab: string) => void;
@@ -17,9 +27,11 @@ interface AdminSidebarProps {
     system_health: string;
     active_integrations: number;
   };
+  notifications: Notification[];
 }
 
-export default function AdminSidebar({ activeTab, setActiveTab, stats }: AdminSidebarProps) {
+export default function AdminSidebar({ activeTab, setActiveTab, stats, notifications }: AdminSidebarProps) {
+  const unreadCount = notifications.filter(n => !n.read).length;
   const menuItems = [
     {
       id: 'overview',
@@ -46,6 +58,12 @@ export default function AdminSidebar({ activeTab, setActiveTab, stats }: AdminSi
       description: 'View and manage all deed documents'
     },
     {
+      id: 'audit',
+      label: 'Audit Logs',
+      icon: '📋',
+      description: 'Track all admin actions and system events'
+    },
+    {
       id: 'revenue',
       label: 'Revenue Analytics',
       icon: '💰',
@@ -68,9 +86,21 @@ export default function AdminSidebar({ activeTab, setActiveTab, stats }: AdminSi
             🚀 Enterprise Admin Console
           </span>
         </div>
-        <h1 className="text-xl font-bold bg-gradient-to-r from-blue-800 to-blue-600 bg-clip-text text-transparent mb-2">
-          DeedPro Admin
-        </h1>
+        <div className="flex items-center justify-between mb-2">
+          <h1 className="text-xl font-bold bg-gradient-to-r from-blue-800 to-blue-600 bg-clip-text text-transparent">
+            DeedPro Admin
+          </h1>
+          <div className="relative">
+            <button className="p-2 text-gray-600 hover:text-blue-600 transition-colors">
+              🔔
+              {unreadCount > 0 && (
+                <span className="absolute -top-1 -right-1 bg-red-500 text-white text-xs rounded-full h-5 w-5 flex items-center justify-center">
+                  {unreadCount}
+                </span>
+              )}
+            </button>
+          </div>
+        </div>
         <p className="text-gray-600 text-sm">
           Platform management & analytics
         </p>

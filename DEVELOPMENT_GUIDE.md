@@ -290,9 +290,18 @@ npm install
 - **Features**: SoftPro 360 webhooks, Qualia GraphQL integration
 - **Documentation**: `backend/EXTERNAL_API_README.md`
 
-### **Admin Dashboard**
+### **Enterprise Admin Dashboard**
 - **Location**: `frontend/src/app/admin/page.tsx`
+- **Sidebar Component**: `frontend/src/components/AdminSidebar.tsx`
 - **Backend**: Admin endpoints in `backend/main.py` (starting with `/admin/`)
+- **Features**: 
+  - Sidebar navigation with real-time stats and notification center
+  - Comprehensive audit logs with IP tracking and search/filter
+  - Performance benchmarks with visual trend analysis
+  - Export/reporting tools for CSV/PDF generation
+  - Backup & recovery management with one-click functionality
+  - Feedback & support widget with embedded forms
+  - Role-based permissions and user management
 
 ### **Core API**
 - **Location**: `backend/main.py`
@@ -304,15 +313,30 @@ npm install
 - **Frontend**: http://localhost:3000
 - **Main API Docs**: http://localhost:8000/docs
 - **External API Docs**: http://localhost:8001/docs
-- **Admin Dashboard**: http://localhost:3000/admin
+- **Enterprise Admin Dashboard**: http://localhost:3000/admin
+- **Deed Wizard**: http://localhost:3000/create-deed
+- **Dashboard**: http://localhost:3000/dashboard
 
 ### **Key Files for Different Tasks**
 - **UI/UX Changes**: `frontend/src/app/*/page.tsx`
+- **Admin Dashboard**: `frontend/src/app/admin/page.tsx` + `frontend/src/components/AdminSidebar.tsx`
 - **API Changes**: `backend/main.py` or `backend/external_api.py`
 - **Styling**: `frontend/src/styles/dashboard.css`
 - **Database**: `backend/database.py`
 - **AI Features**: `backend/ai_assist.py`
 - **Deployment**: `DEPLOYMENT_GUIDE.md`
+
+### **Admin Dashboard Development**
+- **Main Component**: `frontend/src/app/admin/page.tsx` (comprehensive tabs and features)
+- **Sidebar Component**: `frontend/src/components/AdminSidebar.tsx` (navigation with notifications)
+- **Key Features to Understand**:
+  - **Audit Logs**: IP tracking, action logging, search/filter capabilities
+  - **Notification Center**: Real-time alerts with unread counters
+  - **Performance Benchmarks**: Visual trend analysis with progress bars
+  - **Export Tools**: CSV/PDF generation across all admin sections
+  - **Backup & Recovery**: Manual/scheduled backup management
+  - **Feedback Integration**: Embedded forms for issue reporting
+  - **Role Management**: Admin, Viewer, User permission filtering
 
 ---
 

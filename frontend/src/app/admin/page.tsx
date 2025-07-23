@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
+import AdminSidebar from '@/components/AdminSidebar';
 import '../../styles/dashboard.css';
 
 interface AdminStats {
@@ -263,20 +264,20 @@ export default function AdminDashboard() {
 
   const cardStyle = {
     backgroundColor: 'white',
-    border: '1px solid #dee2e6',
-    borderRadius: '10px',
+    border: '1px solid #e5e7eb',
+    borderRadius: '12px',
     padding: '2rem',
     margin: '1rem',
-    boxShadow: '0 2px 4px rgba(0,0,0,0.1)'
+    boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06)'
   };
 
   const statCardStyle = {
     backgroundColor: 'white',
-    border: '1px solid #dee2e6',
-    borderRadius: '10px',
+    border: '1px solid #e5e7eb',
+    borderRadius: '12px',
     padding: '1.5rem',
     textAlign: 'center' as const,
-    boxShadow: '0 2px 4px rgba(0,0,0,0.1)'
+    boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06)'
   };
 
   const tableStyle = {
@@ -286,7 +287,7 @@ export default function AdminDashboard() {
   };
 
   const thStyle = {
-    backgroundColor: '#6A49F2',
+    backgroundColor: '#1e3a8a',
     color: 'white',
     padding: '1rem',
     textAlign: 'left' as const,
@@ -328,138 +329,84 @@ export default function AdminDashboard() {
   }
 
   return (
-    <div style={{ minHeight: '100vh', backgroundColor: '#f8f9fa', padding: '2rem' }}>
-      {/* Header */}
-      <div style={{ marginBottom: '2rem', textAlign: 'center' }}>
-        <div className="mb-4">
-          <span className="inline-block bg-gradient-to-r from-blue-600 to-purple-600 text-white px-4 py-2 rounded-full text-sm font-semibold mb-4">
-            🚀 Enterprise Admin Console
-          </span>
-        </div>
-        <h1 style={{ fontSize: '3rem', background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent', marginBottom: '0.5rem', fontWeight: 'bold' }}>
-          DeedPro Admin Dashboard
-        </h1>
-        <p style={{ fontSize: '1.2rem', color: '#6c757d', marginBottom: '1rem' }}>
-          Comprehensive platform management, API monitoring, and enterprise analytics
-        </p>
-        <div style={{ display: 'flex', justifyContent: 'center', gap: '1rem', flexWrap: 'wrap' }}>
-          <span style={{ backgroundColor: '#e3f2fd', color: '#1976d2', padding: '0.5rem 1rem', borderRadius: '20px', fontSize: '0.9rem', fontWeight: 'bold' }}>
-            ⚡ System Health: {stats.system_health}
-          </span>
-          <span style={{ backgroundColor: '#e8f5e8', color: '#2e7d32', padding: '0.5rem 1rem', borderRadius: '20px', fontSize: '0.9rem', fontWeight: 'bold' }}>
-            🔗 {stats.active_integrations} Active Integrations
-          </span>
-          <span style={{ backgroundColor: '#fff3e0', color: '#f57c00', padding: '0.5rem 1rem', borderRadius: '20px', fontSize: '0.9rem', fontWeight: 'bold' }}>
-            📊 {stats.api_calls_today.toLocaleString()} API Calls Today
-          </span>
-        </div>
-      </div>
-
-      {/* Navigation Tabs */}
-      <div style={{ marginBottom: '2rem', textAlign: 'center' }}>
-        <button onClick={() => setActiveTab('overview')} style={tabStyle(activeTab === 'overview')}>
-          📊 Overview
-        </button>
-        <button onClick={() => setActiveTab('users')} style={tabStyle(activeTab === 'users')}>
-          👥 User Management
-        </button>
-        <button onClick={() => setActiveTab('api')} style={tabStyle(activeTab === 'api')}>
-          🔗 API & Integrations
-        </button>
-        <button onClick={() => setActiveTab('deeds')} style={tabStyle(activeTab === 'deeds')}>
-          📄 All Deeds
-        </button>
-        <button onClick={() => setActiveTab('revenue')} style={tabStyle(activeTab === 'revenue')}>
-          💰 Revenue Analytics
-        </button>
-        <button onClick={() => setActiveTab('system')} style={tabStyle(activeTab === 'system')}>
-          ⚙️ System Health
-        </button>
-      </div>
+    <div className="flex h-screen bg-gray-50">
+      {/* Sidebar */}
+      <AdminSidebar activeTab={activeTab} setActiveTab={setActiveTab} stats={stats} />
+      
+      {/* Main Content */}
+      <div className="flex-1 ml-80 overflow-y-auto">
+        <div className="p-8">
+          {/* Page Header */}
+          <div className="mb-8">
+            <h1 className="text-3xl font-bold bg-gradient-to-r from-blue-800 to-blue-600 bg-clip-text text-transparent mb-2">
+              {activeTab === 'overview' && '📊 Dashboard Overview'}
+              {activeTab === 'users' && '👥 User Management'}
+              {activeTab === 'api' && '🔗 API & Integrations'}
+              {activeTab === 'deeds' && '📄 All Deeds'}
+              {activeTab === 'revenue' && '💰 Revenue Analytics'}
+              {activeTab === 'system' && '⚙️ System Health'}
+            </h1>
+            <p className="text-gray-600">
+              {activeTab === 'overview' && 'Comprehensive platform metrics and quick actions'}
+              {activeTab === 'users' && 'Manage users, subscriptions, and API access'}
+              {activeTab === 'api' && 'Monitor API usage and integration health'}
+              {activeTab === 'deeds' && 'View and manage all deed documents'}
+              {activeTab === 'revenue' && 'Financial reports and subscription analytics'}
+              {activeTab === 'system' && 'Monitor system performance and maintenance'}
+            </p>
+          </div>
 
       {/* Overview Tab */}
       {activeTab === 'overview' && (
         <div>
           {/* Key Metrics */}
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(250px, 1fr))', gap: '1rem', marginBottom: '2rem' }}>
-            <div style={statCardStyle}>
-              <h3 style={{ color: '#6A49F2', margin: '0 0 0.5rem 0' }}>👥 Total Users</h3>
-              <div style={{ fontSize: '2rem', fontWeight: 'bold', color: '#333' }}>{stats.total_users.toLocaleString()}</div>
-              <div style={{ color: '#28a745', fontSize: '0.9rem' }}>{stats.active_users} active</div>
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-8">
+            <div className="bg-white rounded-xl shadow-md border border-gray-200 p-6 text-center">
+              <h3 className="text-blue-800 font-semibold mb-2">👥 Total Users</h3>
+              <div className="text-3xl font-bold text-gray-800">{stats.total_users.toLocaleString()}</div>
+              <div className="text-green-600 text-sm">{stats.active_users} active</div>
             </div>
-            <div style={statCardStyle}>
-              <h3 style={{ color: '#6A49F2', margin: '0 0 0.5rem 0' }}>📄 Total Deeds</h3>
-              <div style={{ fontSize: '2rem', fontWeight: 'bold', color: '#333' }}>{stats.total_deeds.toLocaleString()}</div>
-              <div style={{ color: '#17a2b8', fontSize: '0.9rem' }}>{stats.deeds_this_month} this month</div>
+            <div className="bg-white rounded-xl shadow-md border border-gray-200 p-6 text-center">
+              <h3 className="text-blue-800 font-semibold mb-2">📄 Total Deeds</h3>
+              <div className="text-3xl font-bold text-gray-800">{stats.total_deeds.toLocaleString()}</div>
+              <div className="text-blue-600 text-sm">{stats.deeds_this_month} this month</div>
             </div>
-            <div style={statCardStyle}>
-              <h3 style={{ color: '#6A49F2', margin: '0 0 0.5rem 0' }}>💰 Total Revenue</h3>
-              <div style={{ fontSize: '2rem', fontWeight: 'bold', color: '#333' }}>${stats.total_revenue.toLocaleString()}</div>
-              <div style={{ color: '#28a745', fontSize: '0.9rem' }}>${stats.monthly_revenue} this month</div>
+            <div className="bg-white rounded-xl shadow-md border border-gray-200 p-6 text-center">
+              <h3 className="text-blue-800 font-semibold mb-2">💰 Total Revenue</h3>
+              <div className="text-3xl font-bold text-gray-800">${stats.total_revenue.toLocaleString()}</div>
+              <div className="text-green-600 text-sm">${stats.monthly_revenue} this month</div>
             </div>
-            <div style={statCardStyle}>
-              <h3 style={{ color: '#6A49F2', margin: '0 0 0.5rem 0' }}>🔗 API Calls</h3>
-              <div style={{ fontSize: '2rem', fontWeight: 'bold', color: '#333' }}>{stats.api_calls_today.toLocaleString()}</div>
-              <div style={{ color: '#17a2b8', fontSize: '0.9rem' }}>{stats.api_calls_month.toLocaleString()} this month</div>
+            <div className="bg-white rounded-xl shadow-md border border-gray-200 p-6 text-center">
+              <h3 className="text-blue-800 font-semibold mb-2">🔗 API Calls</h3>
+              <div className="text-3xl font-bold text-gray-800">{stats.api_calls_today.toLocaleString()}</div>
+              <div className="text-blue-600 text-sm">{stats.api_calls_month.toLocaleString()} this month</div>
             </div>
-            <div style={statCardStyle}>
-              <h3 style={{ color: '#6A49F2', margin: '0 0 0.5rem 0' }}>⚙️ System Health</h3>
-              <div style={{ fontSize: '2rem', fontWeight: 'bold', color: '#28a745' }}>{stats.system_health}</div>
-              <div style={{ color: '#17a2b8', fontSize: '0.9rem' }}>99.9% uptime</div>
+            <div className="bg-white rounded-xl shadow-md border border-gray-200 p-6 text-center">
+              <h3 className="text-blue-800 font-semibold mb-2">⚙️ System Health</h3>
+              <div className="text-3xl font-bold text-green-600">{stats.system_health}</div>
+              <div className="text-blue-600 text-sm">99.9% uptime</div>
             </div>
-            <div style={statCardStyle}>
-              <h3 style={{ color: '#6A49F2', margin: '0 0 0.5rem 0' }}>🔗 Integrations</h3>
-              <div style={{ fontSize: '2rem', fontWeight: 'bold', color: '#333' }}>{stats.active_integrations}</div>
-              <div style={{ color: '#17a2b8', fontSize: '0.9rem' }}>SoftPro & Qualia</div>
+            <div className="bg-white rounded-xl shadow-md border border-gray-200 p-6 text-center">
+              <h3 className="text-blue-800 font-semibold mb-2">🔗 Integrations</h3>
+              <div className="text-3xl font-bold text-gray-800">{stats.active_integrations}</div>
+              <div className="text-blue-600 text-sm">SoftPro & Qualia</div>
             </div>
           </div>
 
           {/* Quick Actions */}
-          <div style={cardStyle}>
-            <h3 style={{ color: '#6A49F2', marginBottom: '1rem' }}>🚀 Quick Actions</h3>
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '1rem' }}>
-              <button style={{
-                backgroundColor: '#6A49F2',
-                color: 'white',
-                border: 'none',
-                padding: '1rem',
-                borderRadius: '8px',
-                cursor: 'pointer',
-                fontSize: '1rem'
-              }}>
+          <div className="bg-white rounded-xl shadow-md border border-gray-200 p-6">
+            <h3 className="text-blue-800 font-semibold mb-4 text-lg">🚀 Quick Actions</h3>
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+              <button className="bg-blue-600 hover:bg-blue-700 text-white py-3 px-4 rounded-lg transition-colors font-medium">
                 📧 Send Platform Announcement
               </button>
-              <button style={{
-                backgroundColor: '#17a2b8',
-                color: 'white',
-                border: 'none',
-                padding: '1rem',
-                borderRadius: '8px',
-                cursor: 'pointer',
-                fontSize: '1rem'
-              }}>
+              <button className="bg-blue-500 hover:bg-blue-600 text-white py-3 px-4 rounded-lg transition-colors font-medium">
                 📊 Generate Revenue Report
               </button>
-              <button style={{
-                backgroundColor: '#28a745',
-                color: 'white',
-                border: 'none',
-                padding: '1rem',
-                borderRadius: '8px',
-                cursor: 'pointer',
-                fontSize: '1rem'
-              }}>
+              <button className="bg-green-600 hover:bg-green-700 text-white py-3 px-4 rounded-lg transition-colors font-medium">
                 🔄 System Health Check
               </button>
-              <button style={{
-                backgroundColor: '#ffc107',
-                color: '#000',
-                border: 'none',
-                padding: '1rem',
-                borderRadius: '8px',
-                cursor: 'pointer',
-                fontSize: '1rem'
-              }}>
+              <button className="bg-orange-500 hover:bg-orange-600 text-white py-3 px-4 rounded-lg transition-colors font-medium">
                 🔑 Manage API Keys
               </button>
             </div>
@@ -1006,6 +953,8 @@ export default function AdminDashboard() {
           </div>
         </div>
       )}
+        </div>
+      </div>
     </div>
   );
 } 

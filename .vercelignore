@@ -1,0 +1,8 @@
+backend/
+backend-venv/
+src/
+node_modules/
+.git/
+.env
+*.md
+!frontend/ 

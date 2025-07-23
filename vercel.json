@@ -8,8 +8,12 @@
   ],
   "routes": [
     {
+      "src": "/api/external/(.*)",
+      "dest": "https://deedpro-external-api.onrender.com/$1"
+    },
+    {
       "src": "/api/(.*)",
-      "dest": "https://deedpro-backend.onrender.com/$1"
+      "dest": "https://deedpro-main-api.onrender.com/$1"
     },
     {
       "src": "/(.*)",
@@ -17,7 +21,8 @@
     }
   ],
   "env": {
-    "NEXT_PUBLIC_API_URL": "https://deedpro-backend.onrender.com"
+    "NEXT_PUBLIC_API_URL": "https://deedpro-main-api.onrender.com",
+    "NEXT_PUBLIC_EXTERNAL_API_URL": "https://deedpro-external-api.onrender.com"
   },
   "functions": {
     "frontend/src/app/**/*.tsx": {

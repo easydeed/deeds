@@ -8,22 +8,27 @@
 ```
 C:\Users\gerar\Desktop\deeds-1\          ← PROJECT ROOT (where you start)
 ├── backend/                             ← All Python/API code
-│   ├── main.py                         ← Main API (Port 8000)
+│   ├── main.py                         ← Main API with auth & Stripe (Port 8000)
+│   ├── auth.py                         ← JWT authentication utilities
+│   ├── scripts/
+│   │   └── init_db.py                  ← Database initialization with test accounts
 │   ├── external_api.py                 ← External API (Port 8001) 
 │   ├── ai_assist.py                    ← AI assistance module
 │   ├── start_external_api.py           ← External API startup script
 │   ├── database.py                     ← Database utilities
-│   ├── requirements.txt                ← Core dependencies
+│   ├── requirements.txt                ← Core dependencies (updated)
 │   ├── requirements_full.txt           ← All dependencies (recommended)
 │   ├── external_requirements.txt       ← External API dependencies
 │   ├── EXTERNAL_API_README.md          ← External API documentation
-│   └── .env                           ← Environment variables
+│   └── .env                           ← Environment variables (includes JWT & Stripe)
 ├── frontend/                            ← Next.js React application
 │   ├── src/app/                        ← App router pages
-│   │   ├── create-deed/page.tsx        ← AI-enhanced deed wizard
+│   │   ├── register/page.tsx           ← User registration with validation
+│   │   ├── login/page.tsx              ← JWT authentication with test accounts
+│   │   ├── create-deed/page.tsx        ← AI-enhanced deed wizard with plan limits
 │   │   ├── dashboard/page.tsx          ← Main dashboard
 │   │   ├── admin/page.tsx              ← Admin panel
-│   │   ├── account-settings/page.tsx   ← User settings
+│   │   ├── account-settings/page.tsx   ← User settings with plan management
 │   │   ├── past-deeds/page.tsx         ← Deed history
 │   │   └── shared-deeds/page.tsx       ← Collaboration features
 │   ├── src/components/                 ← Reusable components
@@ -67,6 +72,9 @@ pip install -r requirements.txt
 
 # Verify installation
 python -c "import fastapi; print('FastAPI installed successfully')"
+
+# Initialize database with user registration system
+python scripts/init_db.py
 ```
 
 #### **Run Main API (Port 8000)**
@@ -311,11 +319,20 @@ npm install
 
 ### **URLs in Development**
 - **Frontend**: http://localhost:3000
+- **Registration**: http://localhost:3000/register
+- **Login**: http://localhost:3000/login
 - **Main API Docs**: http://localhost:8000/docs
 - **External API Docs**: http://localhost:8001/docs
 - **Enterprise Admin Dashboard**: http://localhost:3000/admin
 - **Deed Wizard**: http://localhost:3000/create-deed
 - **Dashboard**: http://localhost:3000/dashboard
+- **Account Settings**: http://localhost:3000/account-settings
+
+### **🧪 Test Accounts Available**
+The database initialization creates these ready-to-use accounts:
+- **Free Plan**: test@escrow.com / testpass123 (5 deeds/month limit)
+- **Professional Plan**: pro@title.com / propass123 (unlimited deeds)  
+- **Enterprise Plan**: admin@deedpro.com / adminpass123 (all features)
 
 ### **Key Files for Different Tasks**
 - **UI/UX Changes**: `frontend/src/app/*/page.tsx`

@@ -22,6 +22,22 @@ A comprehensive full-stack platform for creating, managing, and recording real e
 - **Document Generation**: Professional deed creation with legal template merging
 - **Real-time Sync**: All data synchronized across devices via robust API
 
+### User Registration & Authentication 🔐
+- **Comprehensive Registration**: Beautiful, bubbly iPhone-inspired registration form
+- **JWT Authentication**: Secure token-based authentication with bcrypt password hashing
+- **Form Validation**: Password strength, email format, and state code validation
+- **Terms Agreement**: Required terms and conditions acceptance
+- **Test Accounts**: Pre-seeded accounts for all plan tiers (Free, Professional, Enterprise)
+- **Secure Login**: Professional login page with success handling and error management
+
+### Freemium Business Model 💳
+- **Three-Tier Plans**: Free (5 deeds/month), Professional ($29/month), Enterprise ($99/month)
+- **Stripe Integration**: Complete checkout sessions and subscription management
+- **Plan Limits Enforcement**: Real-time checking with visual usage indicators
+- **Upgrade Prompts**: Seamless upgrade flow when limits are reached
+- **Billing Portal**: Stripe customer portal for subscription management
+- **Webhook Handling**: Automatic plan updates via Stripe webhooks
+
 ### Enterprise Admin Dashboard 🎯
 - **Sidebar Navigation**: Professional fixed sidebar with real-time stats and quick actions
 - **Comprehensive Metrics**: 6-panel overview with users, deeds, revenue, API calls, system health, and integrations
@@ -60,9 +76,11 @@ deeds/
 ├── frontend/                 # Next.js frontend application
 │   ├── src/
 │   │   ├── app/
+│   │   │   ├── register/     # User registration with comprehensive validation
+│   │   │   ├── login/        # JWT authentication with test account helper
 │   │   │   ├── dashboard/    # Main dashboard page
-│   │   │   ├── create-deed/  # AI-Enhanced Deed Wizard
-│   │   │   ├── account-settings/ # Account management
+│   │   │   ├── create-deed/  # AI-Enhanced Deed Wizard with plan limits
+│   │   │   ├── account-settings/ # Account & subscription management
 │   │   │   ├── admin/        # Enterprise Admin Dashboard
 │   │   │   ├── past-deeds/   # Deed history
 │   │   │   └── shared-deeds/ # Collaboration features
@@ -75,15 +93,18 @@ deeds/
 │   │       └── dashboard.css # Main styles with AI/tooltip animations
 │   └── package.json
 ├── backend/                  # Main FastAPI backend (Port 8000)
-│   ├── main.py              # Core API endpoints and routes
+│   ├── main.py              # Core API endpoints and routes with auth & Stripe
+│   ├── auth.py              # JWT authentication and password utilities
 │   ├── database.py          # Database utilities and models  
 │   ├── ai_assist.py         # AI assistance endpoints
-│   ├── requirements.txt     # Python dependencies
+│   ├── requirements.txt     # Python dependencies (updated with auth packages)
+│   ├── scripts/
+│   │   └── init_db.py       # Database initialization with test accounts
 │   ├── external_api.py      # External Integrations API (Port 8001)
 │   ├── external_requirements.txt # External API dependencies
 │   ├── start_external_api.py # External API startup script
 │   ├── EXTERNAL_API_README.md # External API documentation
-│   └── .env                 # Environment variables
+│   └── .env                 # Environment variables (includes Stripe & JWT keys)
 └── templates/               # HTML templates for document generation
 ```
 
@@ -148,7 +169,14 @@ deeds/
    # Add your credentials (see Environment Variables section)
    ```
 
-6. **Start the APIs:**
+6. **Initialize the database with registration system:**
+   ```bash
+   # Run database initialization script
+   python scripts/init_db.py
+   # This creates user tables, plan limits, and test accounts
+   ```
+
+7. **Start the APIs:**
    
    **Main API (Port 8000):**
    ```bash
@@ -162,10 +190,18 @@ deeds/
    # Or: uvicorn external_api:external_app --port 8001 --reload
    ```
 
-7. **Access the APIs:**
+8. **Access the APIs:**
    - **Main API docs**: [http://localhost:8000/docs](http://localhost:8000/docs)
    - **External API docs**: [http://localhost:8001/docs](http://localhost:8001/docs)
    - **Health checks**: `/health` on both APIs
+   - **Registration**: [http://localhost:3000/register](http://localhost:3000/register)
+   - **Login**: [http://localhost:3000/login](http://localhost:3000/login)
+
+### 🧪 Test Accounts
+The database initialization creates these test accounts:
+- **Free Plan**: test@escrow.com (password: testpass123)
+- **Professional Plan**: pro@title.com (password: propass123)  
+- **Enterprise Plan**: admin@deedpro.com (password: adminpass123)
 
 ## 🔧 Environment Variables
 
@@ -175,12 +211,21 @@ deeds/
 # Database Configuration
 DATABASE_URL=postgresql://postgres:password@db.xxx.supabase.co:5432/postgres
 
-# Stripe Payments
-STRIPE_SECRET_KEY=sk_test_your_stripe_secret_key
-STRIPE_PUBLISHABLE_KEY=pk_test_your_stripe_publishable_key
+# JWT Authentication
+JWT_SECRET_KEY=your-super-secret-jwt-key-change-in-production
+ACCESS_TOKEN_EXPIRE_MINUTES=30
+
+# Stripe Payments & Subscriptions
+STRIPE_SECRET_KEY=your_stripe_secret_key
+STRIPE_WEBHOOK_SECRET=your_webhook_secret
+STRIPE_PROFESSIONAL_PRICE_ID=your_professional_price_id
+STRIPE_ENTERPRISE_PRICE_ID=your_enterprise_price_id
+
+# Frontend URL (for Stripe redirects)
+FRONTEND_URL=http://localhost:3000
 
 # AI Assistance (Optional - works with mock responses if not provided)
-OPENAI_API_KEY=sk-your_openai_api_key_here
+OPENAI_API_KEY=your_openai_api_key
 
 # External API Configuration (for SoftPro/Qualia integrations)
 EXTERNAL_API_SECRET_KEY=your_external_api_secret
@@ -258,9 +303,12 @@ Production URLs:
 ### Main API (Port 8000) - Core Platform
 
 #### Users & Authentication
-- `POST /users` - Create a new user
-- `GET /users/{email}` - Get user by email  
-- `GET /user/me` - Get current user profile
+- `POST /users/register` - Comprehensive user registration with validation
+- `POST /users/login` - JWT authentication with secure token generation
+- `GET /users/profile` - Get current user profile with plan information
+- `POST /users/upgrade` - Initiate plan upgrade via Stripe checkout
+- `GET /users/{email}` - Get user by email (legacy)
+- `GET /user/me` - Get current user profile (legacy)
 
 #### Deed Management
 - `POST /deeds` - Create a new deed
@@ -279,11 +327,13 @@ Production URLs:
 - `POST /approve/{token}` - Submit approval response
 
 #### Payment & Subscriptions
-- `POST /payment-methods` - Add payment method via Stripe
-- `GET /payment-methods` - List payment methods
-- `DELETE /payment-methods/{id}` - Remove payment method
-- `POST /subscriptions` - Create subscription
-- `GET /subscriptions` - Get current subscription
+- `POST /payments/webhook` - Handle Stripe webhook events (checkout, invoices, cancellations)
+- `POST /payments/create-portal-session` - Create Stripe customer portal session
+- `POST /payment-methods` - Add payment method via Stripe (legacy)
+- `GET /payment-methods` - List payment methods (legacy)
+- `DELETE /payment-methods/{id}` - Remove payment method (legacy)
+- `POST /subscriptions` - Create subscription (legacy)
+- `GET /subscriptions` - Get current subscription (legacy)
 
 #### AI Assistance 🤖
 - `POST /api/ai/assist` - Get AI suggestions for form fields
@@ -479,6 +529,8 @@ curl -X POST "http://localhost:8000/api/ai/assist" \
 - **API Documentation**: http://localhost:8000/docs (Main API)
 - **External API Docs**: http://localhost:8001/docs (External Integrations)
 - **External API Guide**: `backend/EXTERNAL_API_README.md`
+- **Registration & Stripe Setup**: `SETUP_GUIDE.md` - Complete implementation guide
+- **Development Navigation**: `DEVELOPMENT_GUIDE.md` - Developer workflow guide
 
 ### Support Channels
 - **Technical Issues**: Check API documentation and error logs

@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import Sidebar from '../../components/Sidebar';
 import '../../styles/dashboard.css';
 
@@ -18,12 +18,148 @@ export default function AccountSettings() {
     zipCode: '90210'
   });
 
+  // Plan management state
+  const [userProfile, setUserProfile] = useState(null);
+  const [loading, setLoading] = useState(false);
+  const [upgradeLoading, setUpgradeLoading] = useState(false);
+
+  const plans = [
+    {
+      name: 'Starter',
+      price: 'Free',
+      features: [
+        '5 deeds per month',
+        'Basic AI assistance',
+        'Standard templates',
+        'Email support'
+      ],
+      buttonText: 'Current Plan',
+      disabled: true,
+      planKey: 'free'
+    },
+    {
+      name: 'Professional',
+      price: '$29/month',
+      features: [
+        'Unlimited deeds',
+        'Advanced AI assistance',
+        'Premium templates',
+        'SoftPro integration',
+        'Priority support'
+      ],
+      buttonText: 'Upgrade to Pro',
+      disabled: false,
+      planKey: 'professional'
+    },
+    {
+      name: 'Enterprise',
+      price: '$99/month',
+      features: [
+        'Everything in Professional',
+        'Qualia integration',
+        'API access',
+        'Team management',
+        'White-label options',
+        '24/7 dedicated support'
+      ],
+      buttonText: 'Upgrade to Enterprise',
+      disabled: false,
+      planKey: 'enterprise'
+    }
+  ];
+
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
     setFormData({
       ...formData,
       [e.target.name]: e.target.value
     });
   };
+
+  // API functions
+  const fetchUserProfile = async () => {
+    try {
+      const token = localStorage.getItem('access_token');
+      if (!token) return;
+
+      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000'}/users/profile`, {
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
+      });
+
+      if (response.ok) {
+        const profile = await response.json();
+        setUserProfile(profile);
+      }
+    } catch (error) {
+      console.error('Failed to fetch user profile:', error);
+    }
+  };
+
+  const handleUpgrade = async (planKey: any) => {
+    setUpgradeLoading(true);
+    try {
+      const token = localStorage.getItem('access_token');
+      if (!token) {
+        alert('Please log in to upgrade your plan');
+        return;
+      }
+
+      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000'}/users/upgrade`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
+        body: JSON.stringify({ plan: planKey })
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        window.location.href = data.session_url;
+      } else {
+        const error = await response.json();
+        alert(`Upgrade failed: ${error.detail}`);
+      }
+    } catch (error) {
+      alert('Upgrade failed. Please try again.');
+    } finally {
+      setUpgradeLoading(false);
+    }
+  };
+
+  const handleManageSubscription = async () => {
+    setLoading(true);
+    try {
+      const token = localStorage.getItem('access_token');
+      if (!token) {
+        alert('Please log in to manage your subscription');
+        return;
+      }
+
+      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000'}/payments/create-portal-session`, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        window.location.href = data.url;
+      } else {
+        alert('Failed to open billing portal');
+      }
+    } catch (error) {
+      alert('Failed to open billing portal. Please try again.');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchUserProfile();
+  }, []);
 
   const handleSave = () => {
     alert('Settings saved successfully!');
@@ -188,6 +324,7 @@ export default function AccountSettings() {
 
           {/* Billing Tab */}
           <div className={`settings-content ${activeTab === 'billing' ? 'active' : ''}`}>
+            {/* Current Plan Status */}
             <div className="settings-section">
               <h3>Current Plan</h3>
               <div style={{ 
@@ -196,19 +333,153 @@ export default function AccountSettings() {
                 alignItems: 'center',
                 padding: '1.5rem',
                 background: 'var(--gray-50)',
-                borderRadius: '8px',
-                marginBottom: '2rem'
+                borderRadius: '12px',
+                marginBottom: '2rem',
+                border: '2px solid var(--secondary-light)'
               }}>
                 <div>
-                  <h4 style={{ margin: '0 0 0.5rem 0', color: 'var(--text)' }}>Professional Plan</h4>
+                  <h4 style={{ margin: '0 0 0.5rem 0', color: 'var(--text)', fontSize: '1.25rem' }}>
+                    {userProfile?.plan?.charAt(0).toUpperCase() + userProfile?.plan?.slice(1) || 'Starter'} Plan
+                  </h4>
                   <p style={{ margin: 0, color: 'var(--gray-600)', fontSize: '0.875rem' }}>
-                    Unlimited deeds • Priority support • Advanced features
+                    {userProfile?.plan === 'free' && '5 deeds per month • Basic AI assistance • Email support'}
+                    {userProfile?.plan === 'professional' && 'Unlimited deeds • Advanced AI • SoftPro integration • Priority support'}
+                    {userProfile?.plan === 'enterprise' && 'Everything in Pro • Qualia integration • API access • 24/7 support'}
                   </p>
+                  {userProfile?.plan_limits && (
+                    <div style={{ marginTop: '0.75rem', fontSize: '0.8rem', color: 'var(--gray-500)' }}>
+                      {userProfile.plan_limits.max_deeds_per_month > 0 
+                        ? `${userProfile.plan_limits.max_deeds_per_month} deeds per month`
+                        : 'Unlimited deeds'
+                      } • {userProfile.plan_limits.api_calls_per_month} API calls per month
+                    </div>
+                  )}
                 </div>
                 <div style={{ textAlign: 'right' }}>
-                  <div style={{ fontSize: '1.5rem', fontWeight: '600', color: 'var(--text)' }}>$29</div>
-                  <div style={{ fontSize: '0.875rem', color: 'var(--gray-600)' }}>per month</div>
+                  <div style={{ fontSize: '1.5rem', fontWeight: '600', color: 'var(--text)' }}>
+                    {userProfile?.plan === 'free' ? 'Free' : 
+                     userProfile?.plan === 'professional' ? '$29' : '$99'}
+                  </div>
+                  <div style={{ fontSize: '0.875rem', color: 'var(--gray-600)' }}>
+                    {userProfile?.plan === 'free' ? 'forever' : 'per month'}
+                  </div>
                 </div>
+              </div>
+
+              {/* Quick Actions */}
+              {userProfile?.plan !== 'free' && (
+                <div style={{ marginBottom: '2rem' }}>
+                  <button 
+                    onClick={handleManageSubscription}
+                    disabled={loading}
+                    style={{
+                      background: 'var(--primary)',
+                      color: 'white',
+                      border: 'none',
+                      borderRadius: '8px',
+                      padding: '0.75rem 1.5rem',
+                      fontWeight: '500',
+                      cursor: loading ? 'not-allowed' : 'pointer',
+                      marginRight: '1rem',
+                      opacity: loading ? 0.6 : 1
+                    }}
+                  >
+                    {loading ? 'Loading...' : 'Manage Subscription'}
+                  </button>
+                  <span style={{ fontSize: '0.875rem', color: 'var(--gray-600)' }}>
+                    Update payment method, download invoices, or cancel subscription
+                  </span>
+                </div>
+              )}
+            </div>
+
+            {/* Plan Comparison */}
+            <div className="settings-section">
+              <h3>Choose Your Plan</h3>
+              <div style={{ 
+                display: 'grid', 
+                gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', 
+                gap: '1.5rem',
+                marginBottom: '2rem'
+              }}>
+                {plans.map((plan, index) => (
+                  <div 
+                    key={plan.planKey}
+                    style={{
+                      border: userProfile?.plan === plan.planKey ? '2px solid var(--primary)' : '2px solid var(--secondary-light)',
+                      borderRadius: '12px',
+                      padding: '1.5rem',
+                      background: userProfile?.plan === plan.planKey ? 'rgba(59, 130, 246, 0.05)' : 'var(--background)',
+                      position: 'relative',
+                      transition: 'all 0.3s ease'
+                    }}
+                  >
+                    {userProfile?.plan === plan.planKey && (
+                      <div style={{
+                        position: 'absolute',
+                        top: '-1px',
+                        right: '1rem',
+                        background: 'var(--primary)',
+                        color: 'white',
+                        padding: '0.25rem 0.75rem',
+                        borderRadius: '0 0 8px 8px',
+                        fontSize: '0.75rem',
+                        fontWeight: '600'
+                      }}>
+                        CURRENT
+                      </div>
+                    )}
+                    
+                    <div style={{ textAlign: 'center', marginBottom: '1.5rem' }}>
+                      <h4 style={{ margin: '0 0 0.5rem 0', fontSize: '1.25rem', color: 'var(--text)' }}>
+                        {plan.name}
+                      </h4>
+                      <div style={{ fontSize: '2rem', fontWeight: '700', color: 'var(--primary)', marginBottom: '0.5rem' }}>
+                        {plan.price}
+                      </div>
+                    </div>
+
+                    <ul style={{ 
+                      listStyle: 'none', 
+                      padding: 0, 
+                      margin: '0 0 1.5rem 0',
+                      fontSize: '0.875rem'
+                    }}>
+                      {plan.features.map((feature, featureIndex) => (
+                        <li key={featureIndex} style={{ 
+                          display: 'flex', 
+                          alignItems: 'center', 
+                          marginBottom: '0.5rem',
+                          color: 'var(--gray-700)'
+                        }}>
+                          <svg style={{ width: '16px', height: '16px', color: 'var(--primary)', marginRight: '0.5rem' }} fill="currentColor" viewBox="0 0 20 20">
+                            <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
+                          </svg>
+                          {feature}
+                        </li>
+                      ))}
+                    </ul>
+
+                    <button 
+                      onClick={() => handleUpgrade(plan.planKey)}
+                      disabled={userProfile?.plan === plan.planKey || upgradeLoading}
+                      style={{
+                        width: '100%',
+                        padding: '0.75rem',
+                        background: userProfile?.plan === plan.planKey ? 'var(--gray-300)' : 'var(--primary)',
+                        color: userProfile?.plan === plan.planKey ? 'var(--gray-600)' : 'white',
+                        border: 'none',
+                        borderRadius: '8px',
+                        fontWeight: '600',
+                        cursor: userProfile?.plan === plan.planKey || upgradeLoading ? 'not-allowed' : 'pointer',
+                        opacity: upgradeLoading ? 0.6 : 1
+                      }}
+                    >
+                      {upgradeLoading ? 'Processing...' : 
+                       userProfile?.plan === plan.planKey ? 'Current Plan' : plan.buttonText}
+                    </button>
+                  </div>
+                ))}
               </div>
             </div>
 

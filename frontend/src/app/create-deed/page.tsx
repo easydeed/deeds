@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import Sidebar from '../../components/Sidebar';
 import '../../styles/dashboard.css';
 
@@ -222,6 +222,12 @@ export default function CreateDeed() {
     vesting: ''
   });
 
+  // Plan limits state
+  const [userProfile, setUserProfile] = useState(null);
+  const [planLimitsError, setPlanLimitsError] = useState('');
+  const [isGenerating, setIsGenerating] = useState(false);
+  const [deedUsageCount, setDeedUsageCount] = useState(0);
+
   const steps = [
     { 
       id: 1, 
@@ -283,6 +289,104 @@ export default function CreateDeed() {
       [e.target.name]: e.target.value
     });
   };
+
+  // Plan limits checking
+  const fetchUserProfile = async () => {
+    try {
+      const token = localStorage.getItem('access_token');
+      if (!token) return;
+
+      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000'}/users/profile`, {
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
+      });
+
+      if (response.ok) {
+        const profile = await response.json();
+        setUserProfile(profile);
+      }
+    } catch (error) {
+      console.error('Failed to fetch user profile:', error);
+    }
+  };
+
+  const checkPlanLimits = async () => {
+    try {
+      const token = localStorage.getItem('access_token');
+      if (!token) {
+        setPlanLimitsError('Please log in to create deeds');
+        return false;
+      }
+
+      // For demo purposes, we'll check locally stored data
+      // In production, this would call the backend check_plan_limits function
+      if (userProfile?.plan === 'free' && deedUsageCount >= 5) {
+        setPlanLimitsError('You have reached your monthly limit of 5 deeds. Upgrade to Professional for unlimited deeds.');
+        return false;
+      }
+
+      return true;
+    } catch (error) {
+      console.error('Failed to check plan limits:', error);
+      return true; // Allow on error
+    }
+  };
+
+  const handleGenerateDeed = async () => {
+    const canGenerate = await checkPlanLimits();
+    if (!canGenerate) return;
+
+    setIsGenerating(true);
+    setPlanLimitsError('');
+
+    try {
+      // Simulate deed creation API call
+      const token = localStorage.getItem('access_token');
+      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000'}/deeds`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
+        body: JSON.stringify({
+          deed_type: formData.deedType,
+          property_address: formData.propertySearch,
+          apn: formData.apn,
+          county: formData.county,
+          legal_description: formData.legalDescription,
+          owner_type: formData.ownerType,
+          sales_price: parseFloat(formData.salesPrice) || 0,
+          grantee_name: formData.granteeName,
+          vesting: formData.vesting
+        })
+      });
+
+      if (response.ok) {
+        // Update usage count for free users
+        if (userProfile?.plan === 'free') {
+          setDeedUsageCount(prev => prev + 1);
+        }
+        alert('Deed generated successfully! 🎉');
+        // Redirect to dashboard or deed view
+      } else {
+        const error = await response.json();
+        if (error.detail?.includes('limit')) {
+          setPlanLimitsError(error.detail);
+        } else {
+          alert('Failed to generate deed. Please try again.');
+        }
+      }
+    } catch (error) {
+      alert('Failed to generate deed. Please check your connection.');
+    } finally {
+      setIsGenerating(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchUserProfile();
+  }, []);
 
   const nextStep = () => {
     if (currentStep < 5) setCurrentStep(currentStep + 1);
@@ -631,12 +735,68 @@ export default function CreateDeed() {
                 Next →
               </button>
             ) : (
-              <button
-                className="wizard-btn wizard-btn-primary"
-                onClick={() => alert('Deed generation coming soon!')}
-              >
-                Generate Deed ✨
-              </button>
+              <div>
+                {planLimitsError && (
+                  <div style={{
+                    background: 'linear-gradient(135deg, #fee2e2 0%, #fecaca 100%)',
+                    border: '1px solid #f87171',
+                    borderRadius: '12px',
+                    padding: '1rem',
+                    marginBottom: '1rem',
+                    color: '#dc2626',
+                    fontSize: '0.9rem',
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '0.5rem'
+                  }}>
+                    <svg width="20" height="20" fill="currentColor" viewBox="0 0 20 20">
+                      <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clipRule="evenodd" />
+                    </svg>
+                    <div>
+                      <strong>Plan Limit Reached:</strong> {planLimitsError}
+                      <div style={{ marginTop: '0.5rem' }}>
+                        <a 
+                          href="/account-settings" 
+                          style={{ 
+                            color: '#dc2626', 
+                            fontWeight: '600',
+                            textDecoration: 'underline'
+                          }}
+                        >
+                          Upgrade your plan →
+                        </a>
+                      </div>
+                    </div>
+                  </div>
+                )}
+                
+                {userProfile?.plan === 'free' && (
+                  <div style={{
+                    background: 'linear-gradient(135deg, #dbeafe 0%, #bfdbfe 100%)',
+                    border: '1px solid #60a5fa',
+                    borderRadius: '12px',
+                    padding: '0.75rem',
+                    marginBottom: '1rem',
+                    color: '#1d4ed8',
+                    fontSize: '0.85rem',
+                    textAlign: 'center'
+                  }}>
+                    Free Plan: {deedUsageCount}/5 deeds used this month
+                  </div>
+                )}
+                
+                <button
+                  className="wizard-btn wizard-btn-primary"
+                  onClick={handleGenerateDeed}
+                  disabled={isGenerating || !!planLimitsError}
+                  style={{ 
+                    opacity: isGenerating || planLimitsError ? 0.6 : 1,
+                    cursor: isGenerating || planLimitsError ? 'not-allowed' : 'pointer'
+                  }}
+                >
+                  {isGenerating ? 'Generating...' : 'Generate Deed ✨'}
+                </button>
+              </div>
             )}
           </div>
         </div>

@@ -3,4 +3,9 @@ uvicorn[standard]
 python-dotenv
 stripe
 psycopg2-binary
-pydantic 
+pydantic
+passlib[bcrypt]
+python-jose[cryptography]
+python-multipart
+openai
+requests 

@@ -1,15 +1,20 @@
 import os
-from fastapi import FastAPI, HTTPException, Depends, Query
+from fastapi import FastAPI, HTTPException, Depends, Query, Request, Body
 from fastapi.middleware.cors import CORSMiddleware
 from dotenv import load_dotenv
 from pydantic import BaseModel
 from typing import Optional, List
 import stripe
+import psycopg2
 from datetime import datetime, timedelta
 from database import (
     create_user, get_user_by_email, create_deed, get_user_deeds
 )
 from ai_assist import ai_router
+from auth import (
+    get_password_hash, verify_password, create_access_token, 
+    get_current_user_id, get_current_user_email, AuthUtils
+)
 
 load_dotenv()
 
@@ -29,6 +34,15 @@ app.add_middleware(
 
 # Stripe configuration
 stripe.api_key = os.getenv("STRIPE_SECRET_KEY")
+webhook_secret = os.getenv("STRIPE_WEBHOOK_SECRET")
+
+# Database connection
+DB_URL = os.getenv("DATABASE_URL") or os.getenv("DB_URL")
+if DB_URL:
+    conn = psycopg2.connect(DB_URL)
+else:
+    conn = None
+    print("Warning: No database connection URL found")
 
 # Pydantic models
 class UserCreate(BaseModel):
@@ -91,6 +105,34 @@ class ApprovalResponse(BaseModel):
     approved: bool
     comments: Optional[str] = None
 
+# New models for registration and plan management
+class UserRegister(BaseModel):
+    email: str
+    password: str
+    confirm_password: str
+    full_name: str
+    role: str
+    company_name: Optional[str] = None
+    company_type: Optional[str] = None
+    phone: Optional[str] = None
+    state: str
+    agree_terms: bool
+    subscribe: bool = False
+
+class UserLogin(BaseModel):
+    email: str
+    password: str
+
+class UpgradeRequest(BaseModel):
+    plan: str  # 'professional', 'enterprise'
+
+class PlanLimits(BaseModel):
+    max_deeds_per_month: int
+    api_calls_per_month: int
+    ai_assistance: bool
+    integrations_enabled: bool
+    priority_support: bool
+
 # Mock admin check (in production, use JWT token verification)
 def verify_admin():
     # In production, verify admin role from JWT token
@@ -100,6 +142,375 @@ def verify_admin():
 @app.get("/health")
 def health():
     return {"status": "ok", "message": "DeedPro API is running"}
+
+# ============================================================================
+# AUTHENTICATION & REGISTRATION ENDPOINTS
+# ============================================================================
+
+@app.post("/users/register")
+async def register_user(user: UserRegister = Body(...)):
+    """Register a new user with comprehensive validation"""
+    try:
+        # Validation
+        if not user.agree_terms:
+            raise HTTPException(status_code=400, detail="Must agree to terms and conditions")
+        
+        if user.password != user.confirm_password:
+            raise HTTPException(status_code=400, detail="Passwords do not match")
+        
+        # Validate password strength
+        is_valid, message = AuthUtils.validate_password_strength(user.password)
+        if not is_valid:
+            raise HTTPException(status_code=400, detail=message)
+        
+        # Validate email format
+        if not AuthUtils.validate_email(user.email):
+            raise HTTPException(status_code=400, detail="Invalid email format")
+        
+        # Validate state code
+        if not AuthUtils.validate_state_code(user.state):
+            raise HTTPException(status_code=400, detail="Invalid state code")
+        
+        # Hash password
+        hashed_password = get_password_hash(user.password)
+        
+        # Insert user into database
+        if conn:
+            with conn.cursor() as cur:
+                cur.execute("""
+                    INSERT INTO users (email, password_hash, full_name, role, company_name, 
+                                     company_type, phone, state, subscribe, plan)
+                    VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
+                """, (
+                    user.email.lower(), hashed_password, user.full_name, user.role,
+                    user.company_name, user.company_type, user.phone, user.state.upper(),
+                    user.subscribe, 'free'
+                ))
+                conn.commit()
+        
+        return {
+            "message": "User registered successfully", 
+            "email": user.email,
+            "plan": "free"
+        }
+        
+    except psycopg2.IntegrityError:
+        conn.rollback()
+        raise HTTPException(status_code=400, detail="Email already exists")
+    except Exception as e:
+        if conn:
+            conn.rollback()
+        raise HTTPException(status_code=500, detail=f"Registration failed: {str(e)}")
+
+@app.post("/users/login")
+async def login_user(credentials: UserLogin = Body(...)):
+    """Authenticate user and return JWT token"""
+    try:
+        if not conn:
+            raise HTTPException(status_code=500, detail="Database connection not available")
+        
+        with conn.cursor() as cur:
+            cur.execute("""
+                SELECT id, password_hash, full_name, plan, is_active 
+                FROM users WHERE email = %s
+            """, (credentials.email.lower(),))
+            user = cur.fetchone()
+        
+        if not user:
+            raise HTTPException(status_code=401, detail="Invalid email or password")
+        
+        user_id, password_hash, full_name, plan, is_active = user
+        
+        if not is_active:
+            raise HTTPException(status_code=401, detail="Account is deactivated")
+        
+        if not verify_password(credentials.password, password_hash):
+            raise HTTPException(status_code=401, detail="Invalid email or password")
+        
+        # Update last login
+        with conn.cursor() as cur:
+            cur.execute("UPDATE users SET last_login = CURRENT_TIMESTAMP WHERE id = %s", (user_id,))
+            conn.commit()
+        
+        # Create access token
+        access_token = create_access_token(
+            data={"sub": str(user_id), "email": credentials.email.lower()}
+        )
+        
+        return {
+            "access_token": access_token,
+            "token_type": "bearer",
+            "user": {
+                "id": user_id,
+                "email": credentials.email.lower(),
+                "full_name": full_name,
+                "plan": plan
+            }
+        }
+        
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Login failed: {str(e)}")
+
+@app.get("/users/profile")
+async def get_user_profile(user_id: int = Depends(get_current_user_id)):
+    """Get current user's profile information"""
+    try:
+        if not conn:
+            raise HTTPException(status_code=500, detail="Database connection not available")
+        
+        with conn.cursor() as cur:
+            cur.execute("""
+                SELECT id, email, full_name, role, company_name, company_type, 
+                       phone, state, plan, created_at, last_login
+                FROM users WHERE id = %s AND is_active = TRUE
+            """, (user_id,))
+            user = cur.fetchone()
+        
+        if not user:
+            raise HTTPException(status_code=404, detail="User not found")
+        
+        # Get plan limits
+        with conn.cursor() as cur:
+            cur.execute("""
+                SELECT max_deeds_per_month, api_calls_per_month, ai_assistance, 
+                       integrations_enabled, priority_support
+                FROM plan_limits WHERE plan_name = %s
+            """, (user[8],))  # user[8] is plan
+            limits = cur.fetchone()
+        
+        return {
+            "id": user[0],
+            "email": user[1],
+            "full_name": user[2],
+            "role": user[3],
+            "company_name": user[4],
+            "company_type": user[5],
+            "phone": user[6],
+            "state": user[7],
+            "plan": user[8],
+            "created_at": user[9],
+            "last_login": user[10],
+            "plan_limits": {
+                "max_deeds_per_month": limits[0] if limits else 5,
+                "api_calls_per_month": limits[1] if limits else 100,
+                "ai_assistance": limits[2] if limits else True,
+                "integrations_enabled": limits[3] if limits else False,
+                "priority_support": limits[4] if limits else False
+            }
+        }
+        
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Failed to get profile: {str(e)}")
+
+@app.post("/users/upgrade")
+async def upgrade_plan(req: UpgradeRequest, user_id: int = Depends(get_current_user_id)):
+    """Initiate plan upgrade via Stripe Checkout"""
+    try:
+        if not conn:
+            raise HTTPException(status_code=500, detail="Database connection not available")
+        
+        # Get user info
+        with conn.cursor() as cur:
+            cur.execute("SELECT stripe_customer_id, email, full_name FROM users WHERE id = %s", (user_id,))
+            user = cur.fetchone()
+        
+        if not user:
+            raise HTTPException(status_code=404, detail="User not found")
+        
+        customer_id, email, full_name = user
+        
+        # Create Stripe customer if not exists
+        if not customer_id:
+            customer = stripe.Customer.create(
+                email=email,
+                name=full_name,
+                metadata={"user_id": str(user_id)}
+            )
+            customer_id = customer.id
+            
+            # Update database with customer ID
+            with conn.cursor() as cur:
+                cur.execute("UPDATE users SET stripe_customer_id = %s WHERE id = %s", (customer_id, user_id))
+                conn.commit()
+        
+        # Map plans to Stripe price IDs (create these in your Stripe dashboard)
+        price_map = {
+            'professional': os.getenv('STRIPE_PROFESSIONAL_PRICE_ID', 'price_professional_default'),
+            'enterprise': os.getenv('STRIPE_ENTERPRISE_PRICE_ID', 'price_enterprise_default')
+        }
+        
+        if req.plan not in price_map:
+            raise HTTPException(status_code=400, detail="Invalid plan selection")
+        
+        # Create Stripe Checkout session
+        session = stripe.checkout.Session.create(
+            customer=customer_id,
+            client_reference_id=str(user_id),
+            metadata={'plan': req.plan, 'user_id': str(user_id)},
+            payment_method_types=['card'],
+            line_items=[{
+                'price': price_map[req.plan],
+                'quantity': 1
+            }],
+            mode='subscription',
+            success_url=f"{os.getenv('FRONTEND_URL', 'http://localhost:3000')}/account-settings?success=true",
+            cancel_url=f"{os.getenv('FRONTEND_URL', 'http://localhost:3000')}/account-settings?canceled=true",
+            allow_promotion_codes=True,
+        )
+        
+        return {"session_url": session.url, "session_id": session.id}
+        
+    except stripe.error.StripeError as e:
+        raise HTTPException(status_code=400, detail=f"Stripe error: {str(e)}")
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Upgrade failed: {str(e)}")
+
+# ============================================================================
+# STRIPE WEBHOOK & PAYMENT ENDPOINTS
+# ============================================================================
+
+@app.post("/payments/webhook")
+async def stripe_webhook(request: Request):
+    """Handle Stripe webhook events"""
+    payload = await request.body()
+    sig_header = request.headers.get("stripe-signature")
+    
+    if not webhook_secret:
+        raise HTTPException(status_code=500, detail="Webhook secret not configured")
+    
+    try:
+        event = stripe.Webhook.construct_event(payload, sig_header, webhook_secret)
+    except ValueError:
+        raise HTTPException(status_code=400, detail="Invalid payload")
+    except stripe.error.SignatureVerificationError:
+        raise HTTPException(status_code=400, detail="Invalid signature")
+    
+    try:
+        if event['type'] == 'checkout.session.completed':
+            session = event['data']['object']
+            user_id = int(session['client_reference_id'])
+            plan = session['metadata']['plan']
+            
+            # Update user plan in database
+            if conn:
+                with conn.cursor() as cur:
+                    cur.execute("UPDATE users SET plan = %s WHERE id = %s", (plan, user_id))
+                    conn.commit()
+        
+        elif event['type'] == 'invoice.payment_succeeded':
+            invoice = event['data']['object']
+            customer_id = invoice['customer']
+            
+            # Update subscription status
+            if conn:
+                with conn.cursor() as cur:
+                    cur.execute("""
+                        UPDATE users SET updated_at = CURRENT_TIMESTAMP 
+                        WHERE stripe_customer_id = %s
+                    """, (customer_id,))
+                    conn.commit()
+        
+        elif event['type'] == 'customer.subscription.deleted':
+            subscription = event['data']['object']
+            customer_id = subscription['customer']
+            
+            # Downgrade to free plan
+            if conn:
+                with conn.cursor() as cur:
+                    cur.execute("""
+                        UPDATE users SET plan = 'free' 
+                        WHERE stripe_customer_id = %s
+                    """, (customer_id,))
+                    conn.commit()
+        
+        return {"status": "success"}
+        
+    except Exception as e:
+        print(f"Webhook error: {str(e)}")
+        raise HTTPException(status_code=500, detail="Webhook processing failed")
+
+@app.post("/payments/create-portal-session")
+async def create_portal_session(user_id: int = Depends(get_current_user_id)):
+    """Create Stripe customer portal session for subscription management"""
+    try:
+        if not conn:
+            raise HTTPException(status_code=500, detail="Database connection not available")
+        
+        with conn.cursor() as cur:
+            cur.execute("SELECT stripe_customer_id FROM users WHERE id = %s", (user_id,))
+            result = cur.fetchone()
+        
+        if not result or not result[0]:
+            raise HTTPException(status_code=404, detail="No billing information found")
+        
+        session = stripe.billing_portal.Session.create(
+            customer=result[0],
+            return_url=f"{os.getenv('FRONTEND_URL', 'http://localhost:3000')}/account-settings"
+        )
+        
+        return {"url": session.url}
+        
+    except stripe.error.StripeError as e:
+        raise HTTPException(status_code=400, detail=f"Stripe error: {str(e)}")
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Portal session creation failed: {str(e)}")
+
+# ============================================================================
+# PLAN LIMITS & USAGE TRACKING
+# ============================================================================
+
+def check_plan_limits(user_id: int, action: str = "deed_creation") -> dict:
+    """Check if user has reached plan limits"""
+    if not conn:
+        return {"allowed": True, "message": "Database not available"}
+    
+    try:
+        with conn.cursor() as cur:
+            # Get user plan
+            cur.execute("SELECT plan FROM users WHERE id = %s", (user_id,))
+            result = cur.fetchone()
+            if not result:
+                return {"allowed": False, "message": "User not found"}
+            
+            plan = result[0]
+            
+            # Get plan limits
+            cur.execute("""
+                SELECT max_deeds_per_month, api_calls_per_month 
+                FROM plan_limits WHERE plan_name = %s
+            """, (plan,))
+            limits = cur.fetchone()
+            
+            if not limits:
+                return {"allowed": True, "message": "No limits configured"}
+            
+            max_deeds, max_api_calls = limits
+            
+            if action == "deed_creation" and max_deeds > 0:
+                # Check monthly deed count
+                cur.execute("""
+                    SELECT COUNT(*) FROM deeds 
+                    WHERE user_id = %s AND created_at >= DATE_TRUNC('month', CURRENT_DATE)
+                """, (user_id,))
+                deed_count = cur.fetchone()[0]
+                
+                if deed_count >= max_deeds:
+                    return {
+                        "allowed": False, 
+                        "message": f"Monthly deed limit reached ({max_deeds}). Upgrade your plan for unlimited deeds.",
+                        "current_usage": deed_count,
+                        "limit": max_deeds
+                    }
+            
+            return {"allowed": True, "message": "Within limits"}
+            
+    except Exception as e:
+        print(f"Limit check error: {str(e)}")
+        return {"allowed": True, "message": "Limit check failed, allowing action"}
 
 # ============================================================================
 # ADMIN ENDPOINTS - Platform Management

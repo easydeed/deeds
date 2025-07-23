@@ -1001,4 +1001,53 @@ table.w-100.table-striped {
 .flex-wrap { flex-wrap: wrap; }
 .justify-content-between { justify-content: space-between; }
 .align-items-center { align-items: center; }
-.w-100 { width: 100%; } 
+.w-100 { width: 100%; }
+
+/* AI Assistance Spinner Animation */
+@keyframes spin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+
+/* Enhanced tooltip styles for iPhone-like feel */
+.tooltip-container {
+  display: inline-block;
+  position: relative;
+}
+
+.tooltip-container:hover .form-label {
+  color: var(--primary);
+  transition: color 0.2s ease;
+}
+
+/* Enhanced deed type cards with better hover effects */
+.deed-type-card {
+  position: relative;
+  overflow: hidden;
+  transform: translateY(0);
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.deed-type-card:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1);
+}
+
+.deed-type-card.selected {
+  transform: translateY(-2px);
+  box-shadow: 0 10px 30px rgba(59, 130, 246, 0.2);
+}
+
+/* AI suggestion bubble animation */
+.ai-suggestion-enter {
+  opacity: 0;
+  transform: translateY(10px);
+  animation: fadeInUp 0.3s ease forwards;
+}
+
+@keyframes fadeInUp {
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+} 

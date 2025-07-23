@@ -9,10 +9,14 @@ from datetime import datetime, timedelta
 from database import (
     create_user, get_user_by_email, create_deed, get_user_deeds
 )
+from ai_assist import ai_router
 
 load_dotenv()
 
 app = FastAPI(title="DeedPro API", version="1.0.0")
+
+# Include AI assistance router
+app.include_router(ai_router)
 
 # Allow CORS for local dev and frontend
 app.add_middleware(

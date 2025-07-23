@@ -4,6 +4,210 @@ import React, { useState } from 'react';
 import Sidebar from '../../components/Sidebar';
 import '../../styles/dashboard.css';
 
+// Tooltip Component for iPhone-like help text
+const Tooltip = ({ children, text }: { children: React.ReactNode, text: string }) => {
+  const [isVisible, setIsVisible] = useState(false);
+  
+  return (
+    <div 
+      className="tooltip-container"
+      onMouseEnter={() => setIsVisible(true)}
+      onMouseLeave={() => setIsVisible(false)}
+      style={{ position: 'relative', display: 'inline-block' }}
+    >
+      {children}
+      {isVisible && (
+        <div style={{
+          position: 'absolute',
+          bottom: '100%',
+          left: '50%',
+          transform: 'translateX(-50%)',
+          backgroundColor: 'rgba(0, 0, 0, 0.9)',
+          color: 'white',
+          padding: '12px 16px',
+          borderRadius: '12px',
+          fontSize: '14px',
+          lineHeight: '1.4',
+          maxWidth: '250px',
+          whiteSpace: 'normal',
+          zIndex: 1000,
+          boxShadow: '0 4px 12px rgba(0, 0, 0, 0.15)',
+          marginBottom: '8px'
+        }}>
+          {text}
+          <div style={{
+            position: 'absolute',
+            top: '100%',
+            left: '50%',
+            transform: 'translateX(-50%)',
+            width: 0,
+            height: 0,
+            borderLeft: '6px solid transparent',
+            borderRight: '6px solid transparent',
+            borderTop: '6px solid rgba(0, 0, 0, 0.9)'
+          }} />
+        </div>
+      )}
+    </div>
+  );
+};
+
+// AI Suggestion Component
+const AiSuggestion = ({ 
+  fieldName, 
+  fieldValue, 
+  deedType, 
+  onSuggestion 
+}: { 
+  fieldName: string, 
+  fieldValue: string, 
+  deedType: string, 
+  onSuggestion: (suggestion: string) => void 
+}) => {
+  const [isLoading, setIsLoading] = useState(false);
+  const [suggestion, setSuggestion] = useState('');
+  const [showSuggestion, setShowSuggestion] = useState(false);
+
+  const handleGetSuggestion = async () => {
+    if (!fieldValue.trim()) return;
+    
+    setIsLoading(true);
+    try {
+      const response = await fetch('/api/ai/assist', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          deed_type: deedType,
+          field: fieldName,
+          input: fieldValue
+        })
+      });
+      
+      const data = await response.json();
+      if (data.suggestion) {
+        setSuggestion(data.suggestion);
+        setShowSuggestion(true);
+      }
+    } catch (error) {
+      console.error('AI suggestion error:', error);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handleUseSuggestion = () => {
+    onSuggestion(suggestion);
+    setShowSuggestion(false);
+    setSuggestion('');
+  };
+
+  return (
+    <div style={{ position: 'relative' }}>
+      <button
+        type="button"
+        onClick={handleGetSuggestion}
+        disabled={isLoading || !fieldValue.trim()}
+        style={{
+          position: 'absolute',
+          right: '12px',
+          top: '50%',
+          transform: 'translateY(-50%)',
+          backgroundColor: isLoading ? 'var(--gray-200)' : 'var(--accent)',
+          color: isLoading ? 'var(--gray-500)' : 'var(--primary-dark)',
+          border: 'none',
+          borderRadius: '20px',
+          padding: '8px 16px',
+          fontSize: '12px',
+          fontWeight: '600',
+          cursor: isLoading ? 'not-allowed' : 'pointer',
+          display: 'flex',
+          alignItems: 'center',
+          gap: '6px',
+          transition: 'all 0.2s ease',
+          zIndex: 10
+        }}
+      >
+        {isLoading ? (
+          <>
+            <div style={{
+              width: '12px',
+              height: '12px',
+              border: '2px solid var(--gray-400)',
+              borderTop: '2px solid var(--primary)',
+              borderRadius: '50%',
+              animation: 'spin 1s linear infinite'
+            }} />
+            AI...
+          </>
+        ) : (
+          <>
+            ✨ AI Help
+          </>
+        )}
+      </button>
+      
+      {showSuggestion && (
+        <div style={{
+          marginTop: '12px',
+          padding: '16px',
+          backgroundColor: 'rgba(59, 130, 246, 0.05)',
+          border: '1px solid rgba(59, 130, 246, 0.1)',
+          borderRadius: '16px',
+          fontSize: '14px',
+          lineHeight: '1.5'
+        }}>
+          <div style={{ 
+            display: 'flex', 
+            alignItems: 'center', 
+            gap: '8px', 
+            marginBottom: '12px',
+            color: 'var(--primary)',
+            fontWeight: '600'
+          }}>
+            <span>🤖</span>
+            AI Suggestion:
+          </div>
+          <p style={{ margin: '0 0 12px 0', color: 'var(--gray-700)' }}>
+            {suggestion}
+          </p>
+          <div style={{ display: 'flex', gap: '8px' }}>
+            <button
+              onClick={handleUseSuggestion}
+              style={{
+                backgroundColor: 'var(--primary)',
+                color: 'white',
+                border: 'none',
+                borderRadius: '12px',
+                padding: '8px 16px',
+                fontSize: '12px',
+                fontWeight: '600',
+                cursor: 'pointer'
+              }}
+            >
+              Use This
+            </button>
+            <button
+              onClick={() => setShowSuggestion(false)}
+              style={{
+                backgroundColor: 'transparent',
+                color: 'var(--gray-600)',
+                border: '1px solid var(--gray-300)',
+                borderRadius: '12px',
+                padding: '8px 16px',
+                fontSize: '12px',
+                fontWeight: '600',
+                cursor: 'pointer'
+              }}
+            >
+              Dismiss
+            </button>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+};
+
 export default function CreateDeed() {
   const [currentStep, setCurrentStep] = useState(1);
   const [formData, setFormData] = useState({
@@ -134,30 +338,49 @@ export default function CreateDeed() {
                 
                 <div className="deed-type-grid">
                   {deedTypes.map((deed) => (
-                    <div
+                    <Tooltip 
                       key={deed.type}
-                      className={`deed-type-card ${formData.deedType === deed.type ? 'selected' : ''}`}
-                      onClick={() => selectDeedType(deed.type)}
+                      text={deed.type === 'Quitclaim Deed' 
+                        ? 'Most common for family transfers, divorces, or adding/removing names from title. No warranties provided.' 
+                        : deed.type === 'Grant Deed' 
+                        ? 'Standard California deed with basic warranties. Grantor guarantees they own the property and haven\'t transferred it to anyone else.'
+                        : deed.type === 'Warranty Deed'
+                        ? 'Provides maximum protection with full warranties against any title defects, even from previous owners.'
+                        : 'Used for estate planning to transfer property into or out of a trust. Maintains same tax basis.'}
                     >
-                      {deed.popular && (
+                      <div
+                        className={`deed-type-card ${formData.deedType === deed.type ? 'selected' : ''}`}
+                        onClick={() => selectDeedType(deed.type)}
+                      >
+                        {deed.popular && (
+                          <div style={{
+                            position: 'absolute',
+                            top: '1rem',
+                            right: '1rem',
+                            background: 'var(--accent)',
+                            color: 'var(--primary-dark)',
+                            padding: '0.5rem 1rem',
+                            borderRadius: '12px',
+                            fontSize: '0.875rem',
+                            fontWeight: '600'
+                          }}>
+                            POPULAR
+                          </div>
+                        )}
+                        <div className="deed-type-icon">{deed.icon}</div>
+                        <h3 className="deed-type-title">{deed.type}</h3>
+                        <p className="deed-type-description">{deed.description}</p>
                         <div style={{
                           position: 'absolute',
-                          top: '1rem',
+                          bottom: '1rem',
                           right: '1rem',
-                          background: 'var(--accent)',
-                          color: 'var(--primary-dark)',
-                          padding: '0.5rem 1rem',
-                          borderRadius: '12px',
-                          fontSize: '0.875rem',
-                          fontWeight: '600'
+                          color: 'var(--gray-400)',
+                          fontSize: '12px'
                         }}>
-                          POPULAR
+                          💡 Hover for details
                         </div>
-                      )}
-                      <div className="deed-type-icon">{deed.icon}</div>
-                      <h3 className="deed-type-title">{deed.type}</h3>
-                      <p className="deed-type-description">{deed.description}</p>
-                    </div>
+                      </div>
+                    </Tooltip>
                   ))}
                 </div>
               </div>
@@ -173,15 +396,26 @@ export default function CreateDeed() {
                 
                 <div style={{ display: 'grid', gap: '2rem', maxWidth: '600px', margin: '0 auto' }}>
                   <div className="form-group">
-                    <label className="form-label">Property Address</label>
-                    <input
-                      type="text"
-                      name="propertySearch"
-                      className="form-control"
-                      placeholder="123 Main Street, Los Angeles, CA 90210"
-                      value={formData.propertySearch}
-                      onChange={handleInputChange}
-                    />
+                    <Tooltip text="Enter the complete street address including city, state, and ZIP code for accurate property identification.">
+                      <label className="form-label">Property Address 💡</label>
+                    </Tooltip>
+                    <div style={{ position: 'relative' }}>
+                      <input
+                        type="text"
+                        name="propertySearch"
+                        className="form-control"
+                        placeholder="123 Main Street, Los Angeles, CA 90210"
+                        value={formData.propertySearch}
+                        onChange={handleInputChange}
+                        style={{ paddingRight: '100px' }}
+                      />
+                      <AiSuggestion
+                        fieldName="property_address"
+                        fieldValue={formData.propertySearch}
+                        deedType={formData.deedType}
+                        onSuggestion={(suggestion) => setFormData({...formData, propertySearch: suggestion})}
+                      />
+                    </div>
                   </div>
                   
                   <div className="form-group">
@@ -214,15 +448,26 @@ export default function CreateDeed() {
                   </div>
                   
                   <div className="form-group">
-                    <label className="form-label">Legal Description (Optional)</label>
-                    <textarea
-                      name="legalDescription"
-                      className="form-control"
-                      rows={4}
-                      placeholder="Enter detailed legal description if available..."
-                      value={formData.legalDescription}
-                      onChange={handleInputChange}
-                    />
+                    <Tooltip text="Legal description provides precise property boundaries. AI can help format based on your input or APN.">
+                      <label className="form-label">Legal Description (Optional) 💡</label>
+                    </Tooltip>
+                    <div style={{ position: 'relative' }}>
+                      <textarea
+                        name="legalDescription"
+                        className="form-control"
+                        rows={4}
+                        placeholder="Enter detailed legal description if available..."
+                        value={formData.legalDescription}
+                        onChange={handleInputChange}
+                        style={{ paddingRight: '100px' }}
+                      />
+                      <AiSuggestion
+                        fieldName="legal_description"
+                        fieldValue={formData.legalDescription || formData.apn}
+                        deedType={formData.deedType}
+                        onSuggestion={(suggestion) => setFormData({...formData, legalDescription: suggestion})}
+                      />
+                    </div>
                   </div>
                 </div>
               </div>

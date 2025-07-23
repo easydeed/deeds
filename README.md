@@ -325,22 +325,116 @@ Start Command: python main.py
 - **Region**: Ohio (US East)
 - **Connection**: Via DATABASE_URL environment variable
 
-## 🔄 **Deployment Workflow**
+## 🔄 **Development & Deployment Workflow**
 
-### **For Frontend Updates**
-1. **Update files** in `frontend/` folder of main repository
-2. **Push to** [easydeed/deeds](https://github.com/easydeed/deeds)
-3. **Vercel auto-deploys** from the `frontend/` directory
+### **🖥️ Local Development Setup**
 
-### **For Backend Updates**  
-1. **Update files** in `backend/` folder locally
-2. **Copy changes** to [easydeed/deedpro-backend-2024](https://github.com/easydeed/deedpro-backend-2024)
-3. **Render auto-deploys** the updated backend
+**Your development repositories:**
+```
+C:\Users\gerar\Desktop\
+├── deeds-1/                    ← Main development repository
+│   ├── frontend/              ← Frontend development
+│   └── backend/               ← Backend development  
+└── deedpro-backend-2024/       ← Backend deployment repository
+    └── backend/               ← Synced with main project
+```
 
-### **For Database Updates**
-1. **Use local scripts** (like `setup_database.py`) to modify schema
-2. **Connect directly** to Render PostgreSQL database
-3. **Changes apply immediately** to live backend
+### **📝 For Frontend Updates**
+```powershell
+# Work in main repository
+cd "C:\Users\gerar\Desktop\deeds-1"
+
+# Make changes in frontend/ folder
+# Test locally: cd frontend && npm run dev
+
+# Commit and push
+git add .
+git commit -m "Update frontend features"
+git push origin main
+
+# Vercel auto-deploys from main repository
+```
+
+### **🔧 For Backend Updates**
+```powershell
+# Step 1: Update main repository (backup)
+cd "C:\Users\gerar\Desktop\deeds-1"
+
+# Make changes in backend/ folder
+# Test locally: cd backend && python main.py
+
+# Commit to main repository
+git add .
+git commit -m "Update backend API"
+git push origin main
+
+# Step 2: Update backend deployment repository
+cd "C:\Users\gerar\Desktop\deedpro-backend-2024"
+
+# Copy latest files
+xcopy "C:\Users\gerar\Desktop\deeds-1\backend\*" "backend\" /Y /S
+del backend\.env  # Remove .env for security
+
+# Commit and push
+git add .
+git commit -m "Update backend deployment"
+git push origin main
+
+# Render auto-deploys backend repository
+```
+
+### **🗄️ For Database Updates**
+```powershell
+# Use local scripts to connect to live database
+cd "C:\Users\gerar\Desktop\deeds-1\backend"
+
+# Run database scripts as needed
+python setup_database.py      # Initialize schema
+python reset_and_fix.py      # Fix connection issues
+python add_last_login.py     # Add missing columns
+
+# Changes apply immediately to live database
+```
+
+### **🔄 Quick Development Commands**
+
+**Start Local Development:**
+```powershell
+# Frontend (from main repository)
+cd "C:\Users\gerar\Desktop\deeds-1\frontend"
+npm run dev
+# Runs on http://localhost:3000
+
+# Backend (from main repository)  
+cd "C:\Users\gerar\Desktop\deeds-1\backend"
+python main.py
+# Runs on http://localhost:8000
+```
+
+**Test Full Stack:**
+```powershell
+# Start both services
+cd "C:\Users\gerar\Desktop\deeds-1"
+
+# Terminal 1: Frontend
+cd frontend && npm run dev
+
+# Terminal 2: Backend
+cd backend && python main.py
+
+# Test at: http://localhost:3000
+```
+
+**Deploy Changes:**
+```powershell
+# Quick deploy script for backend
+cd "C:\Users\gerar\Desktop\deeds-1"
+git add . && git commit -m "Update" && git push origin main
+
+cd "C:\Users\gerar\Desktop\deedpro-backend-2024"
+xcopy "..\deeds-1\backend\*" "backend\" /Y /S && del backend\.env
+git add . && git commit -m "Deploy backend" && git push origin main
+```
 
 ## 📋 **Repository Maintenance**
 

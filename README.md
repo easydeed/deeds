@@ -6,11 +6,48 @@ A comprehensive full-stack platform for creating, managing, and recording real e
 
 - **Frontend**: Next.js (React + TypeScript) with AI-enhanced wizard interface
 - **Backend**: FastAPI (Python) with dual API architecture
-- **Database**: PostgreSQL with Supabase integration
+- **Database**: PostgreSQL with Render hosting
 - **AI Assistance**: OpenAI integration for smart form field suggestions
 - **External Integrations**: SoftPro 360 & Qualia API connections
 - **Payments**: Stripe-powered subscription management
-- **Deployment**: Vercel (Frontend) + Render (Backend + External API)
+- **Deployment**: Vercel (Frontend) + Render (Backend + Database)
+
+## 📁 **Current Repository Structure**
+
+### **Dual-Repository Deployment Setup**
+
+**We currently use a dual-repository setup for optimal deployment:**
+
+#### **📂 Main Repository** (Complete Project)
+- **Repository**: [https://github.com/easydeed/deeds](https://github.com/easydeed/deeds)
+- **Contains**: Frontend + Backend + Documentation
+- **Connected to**: **Vercel** (Frontend deployment)
+- **Purpose**: Complete project backup and frontend source
+
+#### **📂 Backend-Only Repository** (Clean Deployment)  
+- **Repository**: [https://github.com/easydeed/deedpro-backend-2024](https://github.com/easydeed/deedpro-backend-2024)
+- **Contains**: Backend Python files only
+- **Connected to**: **Render** (Backend deployment)
+- **Purpose**: Clean backend deployment without frontend conflicts
+
+### **Why Dual Repositories?**
+
+✅ **Clean Deployments**: Each service deploys only what it needs
+✅ **No Conflicts**: Frontend and backend deploy independently  
+✅ **Complete Backup**: Main repository preserves entire project
+✅ **Optimal Performance**: Faster builds with smaller, focused repositories
+
+## 🚀 **Live Deployment URLs**
+
+### **Production Platform**
+- **Frontend**: https://frontend-mydmrvafb-easydeeds-projects.vercel.app
+- **Backend API**: https://deedpro-main-api.onrender.com
+- **API Documentation**: https://deedpro-main-api.onrender.com/docs
+- **Health Check**: https://deedpro-main-api.onrender.com/health
+
+### **Database**
+- **PostgreSQL**: Hosted on Render (`deedpro-db-2024`)
+- **Connection**: Backend connects via environment variables
 
 ## 🚀 Features
 
@@ -252,51 +289,79 @@ NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY=pk_test_your_stripe_publishable_key
 
 ## 🚀 Deployment
 
-### Frontend (Vercel)
+### **Current Deployment Architecture**
 
-1. **Connect GitHub repository to Vercel**
-2. **Set build settings:**
-   - Framework: Next.js
-   - Root directory: `frontend`
-   - Build command: `npm run build`
-   - Output directory: `.next`
+#### **Frontend Deployment (Vercel)**
+- **Source Repository**: [easydeed/deeds](https://github.com/easydeed/deeds)
+- **Build Directory**: `frontend/`
+- **Auto-Deploy**: ✅ Pushes to main branch auto-deploy
+- **Environment Variables**: Set in Vercel dashboard
 
-3. **Add environment variables in Vercel dashboard:**
-   ```env
-   NEXT_PUBLIC_API_URL=https://your-main-api.render.com
-   NEXT_PUBLIC_EXTERNAL_API_URL=https://your-external-api.render.com
-   NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY=pk_live_your_live_key
-   ```
-
-### Backend APIs (Render)
-
-#### Main API Service
-1. **Create Web Service:**
-   - Name: `deedpro-main-api`
-   - Root directory: `backend`
-   - Build command: `pip install -r requirements.txt`
-   - Start command: `uvicorn main:app --host 0.0.0.0 --port $PORT`
-
-#### External Integrations API Service  
-1. **Create Web Service:**
-   - Name: `deedpro-external-api`
-   - Root directory: `backend`
-   - Build command: `pip install -r external_requirements.txt`
-   - Start command: `python start_external_api.py`
-   - Environment variable: `EXTERNAL_API_PORT=$PORT`
-
-2. **Add environment variables to both services:**
-   - All variables from your `.env` file
-   - Ensure API keys and secrets are set for production
-
-### Domain Configuration
-
+**Vercel Configuration:**
 ```
-Production URLs:
-├── Frontend: https://deedpro.vercel.app
-├── Main API: https://deedpro-main-api.render.com
-└── External API: https://deedpro-external-api.render.com
+Framework: Next.js
+Root Directory: frontend
+Build Command: npm run build
+Output Directory: .next
 ```
+
+#### **Backend Deployment (Render)**  
+- **Source Repository**: [easydeed/deedpro-backend-2024](https://github.com/easydeed/deedpro-backend-2024)
+- **Build Directory**: `backend/`
+- **Auto-Deploy**: ✅ Pushes to main branch auto-deploy
+- **Environment Variables**: Set in Render dashboard
+
+**Render Configuration:**
+```
+Environment: Python 3
+Root Directory: backend
+Build Command: pip install -r requirements.txt
+Start Command: python main.py
+```
+
+### **Database (Render PostgreSQL)**
+- **Service Name**: `deedpro-db-2024`
+- **Version**: PostgreSQL 15
+- **Region**: Ohio (US East)
+- **Connection**: Via DATABASE_URL environment variable
+
+## 🔄 **Deployment Workflow**
+
+### **For Frontend Updates**
+1. **Update files** in `frontend/` folder of main repository
+2. **Push to** [easydeed/deeds](https://github.com/easydeed/deeds)
+3. **Vercel auto-deploys** from the `frontend/` directory
+
+### **For Backend Updates**  
+1. **Update files** in `backend/` folder locally
+2. **Copy changes** to [easydeed/deedpro-backend-2024](https://github.com/easydeed/deedpro-backend-2024)
+3. **Render auto-deploys** the updated backend
+
+### **For Database Updates**
+1. **Use local scripts** (like `setup_database.py`) to modify schema
+2. **Connect directly** to Render PostgreSQL database
+3. **Changes apply immediately** to live backend
+
+## 📋 **Repository Maintenance**
+
+### **Keeping Repositories Synchronized**
+
+**Main Repository** (`easydeed/deeds`):
+- ✅ Always contains the **complete, current project**
+- ✅ **Primary backup** for all code
+- ✅ **Documentation hub** with all guides
+
+**Backend Repository** (`easydeed/deedpro-backend-2024`):
+- ✅ **Mirror of** `backend/` folder from main repository
+- ✅ **Update when** backend changes are made
+- ✅ **Render deployment source**
+
+### **Update Process**
+1. **Make changes** to files in main repository locally
+2. **Test changes** locally
+3. **Push to main repository** for backup
+4. **Copy backend changes** to backend-only repository if needed
+5. **Both services auto-deploy** their respective updates
 
 ## 📋 API Endpoints
 
@@ -497,31 +562,96 @@ This project is proprietary software for DeedPro.io.
 
 ## 🔧 Development Commands
 
-### PowerShell Commands (Windows)
-```powershell
-# Start both APIs simultaneously
-cd backend
-Start-Job { python main.py }
-Start-Job { python start_external_api.py }
+### **Local Development Setup**
 
-# Or start individually
-python main.py          # Main API (Port 8000)
-python start_external_api.py  # External API (Port 8001)
-```
-
-### Testing External Integrations
+**Frontend (using main repository)**:
 ```bash
-# Test SoftPro webhook
-curl -X POST "http://localhost:8001/api/v1/softpro/webhook" \
-  -H "X-API-Key: softpro_api_key_123" \
-  -H "Content-Type: application/json" \
-  -d '{"order_id": "SP12345", "property_address": "123 Main St", "buyer_name": "John Doe", "seller_name": "Jane Smith"}'
-
-# Test AI assistance  
-curl -X POST "http://localhost:8000/api/ai/assist" \
-  -H "Content-Type: application/json" \
-  -d '{"deed_type": "Grant Deed", "field": "property_address", "input": "123 main st los angeles"}'
+cd frontend
+npm install
+npm run dev
+# Runs on http://localhost:3000
 ```
+
+**Backend (using main repository)**:
+```bash
+cd backend
+pip install -r requirements.txt
+python main.py
+# Runs on http://localhost:8000
+```
+
+### **Database Management**
+```bash
+# Initialize/update database schema
+cd backend
+python setup_database.py
+
+# Add missing columns
+python fix_database.py
+
+# Reset database connection
+python reset_and_fix.py
+```
+
+## 🗂️ **File Organization**
+
+### **Main Repository Structure** (`easydeed/deeds`)
+```
+deeds/
+├── frontend/                 # Next.js frontend (→ Vercel)
+│   ├── src/app/             # Next.js pages
+│   ├── components/          # React components  
+│   └── package.json         # Frontend dependencies
+├── backend/                 # FastAPI backend (→ Copy to backend repo)
+│   ├── main.py             # Main API server
+│   ├── database.py         # Database utilities
+│   ├── auth.py             # Authentication
+│   └── requirements.txt    # Python dependencies
+├── README.md               # This file
+├── DEPLOYMENT_GUIDE.md     # Deployment instructions
+└── DEVELOPMENT_GUIDE.md    # Development setup
+```
+
+### **Backend Repository Structure** (`easydeed/deedpro-backend-2024`)
+```
+deedpro-backend-2024/
+└── backend/                # Clean backend for Render
+    ├── main.py            # API server (→ Render)
+    ├── database.py        # Database utilities
+    ├── auth.py           # Authentication  
+    ├── requirements.txt   # Dependencies
+    └── scripts/          # Database scripts
+        └── init_db.py    # Database initialization
+```
+
+## 🎯 **Quick Reference**
+
+### **Making Changes**
+
+**Frontend Changes**:
+1. Edit files in `frontend/` folder
+2. Push to [easydeed/deeds](https://github.com/easydeed/deeds)
+3. Vercel deploys automatically
+
+**Backend Changes**:
+1. Edit files in `backend/` folder  
+2. Push to [easydeed/deeds](https://github.com/easydeed/deeds) (backup)
+3. Copy changes to [easydeed/deedpro-backend-2024](https://github.com/easydeed/deedpro-backend-2024)
+4. Render deploys automatically
+
+**Database Changes**:
+1. Use local Python scripts
+2. Connect to live Render database
+3. Changes apply immediately
+
+### **Repository URLs**
+- **Main Project**: [https://github.com/easydeed/deeds](https://github.com/easydeed/deeds)
+- **Backend Deployment**: [https://github.com/easydeed/deedpro-backend-2024](https://github.com/easydeed/deedpro-backend-2024)
+
+### **Live URLs**  
+- **Frontend**: https://frontend-mydmrvafb-easydeeds-projects.vercel.app
+- **Backend**: https://deedpro-main-api.onrender.com
+- **API Docs**: https://deedpro-main-api.onrender.com/docs
 
 ## 🆘 Support & Documentation
 

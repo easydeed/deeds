@@ -34,8 +34,8 @@ JWT_SECRET_KEY=your-super-secret-jwt-key-change-in-production
 ACCESS_TOKEN_EXPIRE_MINUTES=30
 
 # Stripe Configuration
-STRIPE_SECRET_KEY=sk_test_51xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
-STRIPE_WEBHOOK_SECRET=whsec_xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
+STRIPE_SECRET_KEY=sk_test_your_stripe_secret_key
+STRIPE_WEBHOOK_SECRET=whsec_your_webhook_secret
 
 # Stripe Price IDs (create these in your Stripe dashboard)
 STRIPE_PROFESSIONAL_PRICE_ID=price_1xxxxxxxxxxxxxxxxx

@@ -1,19 +1,44 @@
 services:
+  # Main API Backend
   - type: web
-    name: deedpro-backend
-    env: python
-    buildCommand: "pip install -r backend/requirements.txt"
-    startCommand: "cd backend && uvicorn main:app --host 0.0.0.0 --port 8000"
-    healthCheckPath: "/health"
+    name: deedpro-main-api
+    runtime: python3
+    rootDir: backend
+    buildCommand: pip install -r requirements.txt
+    startCommand: python main.py
     envVars:
+      - key: DATABASE_URL
+        fromDatabase:
+          name: deedpro-database
+          property: connectionString
+      - key: JWT_SECRET_KEY
+        generateValue: true
       - key: STRIPE_SECRET_KEY
-        sync: false
-      - key: STRIPE_PUBLISHABLE_KEY
-        sync: false
-      - key: PYTHON_VERSION
-        value: 3.11.0
-    scaling:
-      minInstances: 1
-      maxInstances: 3
-    domains:
-      - deedpro-api.onrender.com 
+        sync: false  # Set manually in Render dashboard
+      - key: STRIPE_WEBHOOK_SECRET
+        sync: false  # Set manually in Render dashboard
+      - key: ENVIRONMENT
+        value: production
+
+  # External API Backend  
+  - type: web
+    name: deedpro-external-api
+    runtime: python3
+    rootDir: backend
+    buildCommand: pip install -r requirements.txt
+    startCommand: python start_external_api.py
+    envVars:
+      - key: DATABASE_URL
+        fromDatabase:
+          name: deedpro-database
+          property: connectionString
+      - key: JWT_SECRET_KEY
+        generateValue: true
+      - key: ENVIRONMENT
+        value: production
+
+databases:
+  - name: deedpro-database
+    databaseName: deedpro
+    user: deedpro_user
+    plan: free  # Can upgrade to paid plan later 

@@ -110,7 +110,7 @@ git push origin main
 NEXT_PUBLIC_API_URL=http://localhost:8000
 
 # Stripe (use test keys)
-NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY=pk_test_your_stripe_test_key
+NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY=[your_stripe_publishable_key]
 
 # Development settings
 NODE_ENV=development
@@ -127,8 +127,8 @@ DATABASE_URL=postgresql://user:password@localhost:5432/deedpro_dev
 JWT_SECRET_KEY=development-secret-key-change-in-production
 
 # Stripe (test keys)
-STRIPE_SECRET_KEY=sk_test_your_stripe_test_key
-STRIPE_WEBHOOK_SECRET=whsec_test_your_webhook_secret
+STRIPE_SECRET_KEY=[your_stripe_secret_key_here]
+STRIPE_WEBHOOK_SECRET=[your_webhook_secret]
 
 # Development settings
 ENVIRONMENT=development

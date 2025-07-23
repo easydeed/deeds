@@ -57,8 +57,8 @@ This guide will walk you through deploying your DeedPro backend to Render with z
    JWT_SECRET_KEY = your-secret-jwt-key-here-make-it-long-and-random
    
    # Stripe Keys (Get from https://dashboard.stripe.com/apikeys)
-   STRIPE_SECRET_KEY = [Your Stripe Secret Key - starts with sk_test_]
-   STRIPE_WEBHOOK_SECRET = [Your Webhook Secret - starts with whsec_]
+   STRIPE_SECRET_KEY = [Your Stripe Secret Key]
+   STRIPE_WEBHOOK_SECRET = [Your Webhook Secret]
    
    # Environment
    ENVIRONMENT = production

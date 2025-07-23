@@ -284,7 +284,7 @@ NEXT_PUBLIC_API_URL=http://localhost:8000
 NEXT_PUBLIC_EXTERNAL_API_URL=http://localhost:8001
 
 # Stripe (for frontend)
-NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY=pk_test_your_stripe_publishable_key
+NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY=[your_stripe_publishable_key]
 ```
 
 ## 🚀 Deployment

@@ -50,7 +50,7 @@ NEXT_PUBLIC_API_URL=https://deedpro-main-api.onrender.com
 NEXT_PUBLIC_EXTERNAL_API_URL=https://deedpro-external-api.onrender.com
 
 # Stripe Public Key
-NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY=pk_live_your_live_stripe_key
+NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY=[your_live_stripe_key]
 
 # Optional: Analytics
 NEXT_PUBLIC_ANALYTICS_ID=your_analytics_id
@@ -92,8 +92,8 @@ NEXT_PUBLIC_ANALYTICS_ID=your_analytics_id
 DATABASE_URL=postgresql://username:password@host:port/database
 
 # Stripe
-STRIPE_SECRET_KEY=sk_live_your_live_stripe_secret_key
-STRIPE_PUBLISHABLE_KEY=pk_live_your_live_stripe_publishable_key
+STRIPE_SECRET_KEY=[your_live_stripe_secret_key]
+STRIPE_PUBLISHABLE_KEY=[your_live_stripe_publishable_key]
 
 # AI (Optional)
 OPENAI_API_KEY=sk-your_openai_api_key

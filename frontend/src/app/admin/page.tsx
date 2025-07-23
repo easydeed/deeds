@@ -10,6 +10,10 @@ interface AdminStats {
   deeds_this_month: number;
   total_revenue: number;
   monthly_revenue: number;
+  api_calls_today: number;
+  api_calls_month: number;
+  system_health: string;
+  active_integrations: number;
 }
 
 interface User {
@@ -24,6 +28,11 @@ interface User {
   created_at: string;
   last_login: string;
   is_active: boolean;
+  api_key?: string;
+  api_calls_this_month: number;
+  integrations: string[];
+  company?: string;
+  role?: string;
 }
 
 interface Deed {
@@ -36,6 +45,30 @@ interface Deed {
   created_at: string;
   shared_count: number;
   approval_count: number;
+  ai_assistance_used: boolean;
+  api_generated: boolean;
+  integration_source?: string;
+}
+
+interface ApiUsage {
+  user_id: number;
+  user_email: string;
+  endpoint: string;
+  calls_today: number;
+  calls_month: number;
+  last_call: string;
+  status: string;
+}
+
+interface Integration {
+  id: number;
+  name: string;
+  type: 'softpro' | 'qualia' | 'custom';
+  status: string;
+  users_count: number;
+  calls_today: number;
+  last_sync: string;
+  webhook_url?: string;
 }
 
 export default function AdminDashboard() {
@@ -46,10 +79,16 @@ export default function AdminDashboard() {
     total_deeds: 0,
     deeds_this_month: 0,
     total_revenue: 0,
-    monthly_revenue: 0
+    monthly_revenue: 0,
+    api_calls_today: 0,
+    api_calls_month: 0,
+    system_health: 'healthy',
+    active_integrations: 0
   });
   const [users, setUsers] = useState<User[]>([]);
   const [deeds, setDeeds] = useState<Deed[]>([]);
+  const [apiUsage, setApiUsage] = useState<ApiUsage[]>([]);
+  const [integrations, setIntegrations] = useState<Integration[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -61,7 +100,11 @@ export default function AdminDashboard() {
         total_deeds: 3456,
         deeds_this_month: 234,
         total_revenue: 45230.50,
-        monthly_revenue: 8750.25
+        monthly_revenue: 8750.25,
+        api_calls_today: 15420,
+        api_calls_month: 284750,
+        system_health: 'healthy',
+        active_integrations: 156
       });
 
       setUsers([
@@ -70,39 +113,53 @@ export default function AdminDashboard() {
           email: "john@example.com",
           first_name: "John",
           last_name: "Doe",
-          subscription_plan: "pro",
+          subscription_plan: "enterprise",
           subscription_status: "active",
-          total_deeds: 12,
-          monthly_revenue: 29.99,
+          total_deeds: 45,
+          monthly_revenue: 299.99,
           created_at: "2024-01-01",
           last_login: "2024-01-15",
-          is_active: true
+          is_active: true,
+          api_key: "dp_live_123456789",
+          api_calls_this_month: 2847,
+          integrations: ["SoftPro 360", "Qualia"],
+          company: "ABC Title Company",
+          role: "Escrow Officer"
         },
         {
           id: 2,
           email: "jane@company.com",
           first_name: "Jane",
           last_name: "Smith",
-          subscription_plan: "basic",
+          subscription_plan: "professional",
           subscription_status: "active",
-          total_deeds: 8,
-          monthly_revenue: 9.99,
+          total_deeds: 23,
+          monthly_revenue: 89.99,
           created_at: "2024-01-05",
           last_login: "2024-01-14",
-          is_active: true
+          is_active: true,
+          api_key: "dp_live_987654321",
+          api_calls_this_month: 156,
+          integrations: ["SoftPro 360"],
+          company: "Smith Real Estate",
+          role: "Real Estate Agent"
         },
         {
           id: 3,
           email: "bob@firm.com",
           first_name: "Bob",
           last_name: "Wilson",
-          subscription_plan: "free",
-          subscription_status: "cancelled",
-          total_deeds: 3,
-          monthly_revenue: 0.00,
+          subscription_plan: "starter",
+          subscription_status: "active",
+          total_deeds: 8,
+          monthly_revenue: 29.99,
           created_at: "2024-01-10",
           last_login: "2024-01-13",
-          is_active: false
+          is_active: true,
+          api_calls_this_month: 0,
+          integrations: [],
+          company: "Wilson Law Firm",
+          role: "Attorney"
         }
       ]);
 
@@ -116,7 +173,10 @@ export default function AdminDashboard() {
           status: "completed",
           created_at: "2024-01-10",
           shared_count: 2,
-          approval_count: 1
+          approval_count: 1,
+          ai_assistance_used: true,
+          api_generated: true,
+          integration_source: "SoftPro 360"
         },
         {
           id: 2,
@@ -127,7 +187,61 @@ export default function AdminDashboard() {
           status: "draft",
           created_at: "2024-01-14",
           shared_count: 0,
-          approval_count: 0
+          approval_count: 0,
+          ai_assistance_used: true,
+          api_generated: false
+        }
+      ]);
+
+      setApiUsage([
+        {
+          user_id: 1,
+          user_email: "john@example.com",
+          endpoint: "/api/v1/softpro/webhook",
+          calls_today: 45,
+          calls_month: 2847,
+          last_call: "2024-01-15T10:30:00Z",
+          status: "active"
+        },
+        {
+          user_id: 1,
+          user_email: "john@example.com",
+          endpoint: "/api/v1/qualia/graphql",
+          calls_today: 23,
+          calls_month: 1567,
+          last_call: "2024-01-15T09:15:00Z",
+          status: "active"
+        },
+        {
+          user_id: 2,
+          user_email: "jane@company.com",
+          endpoint: "/api/v1/softpro/webhook",
+          calls_today: 12,
+          calls_month: 156,
+          last_call: "2024-01-15T08:45:00Z",
+          status: "active"
+        }
+      ]);
+
+      setIntegrations([
+        {
+          id: 1,
+          name: "SoftPro 360",
+          type: "softpro",
+          status: "active",
+          users_count: 89,
+          calls_today: 1247,
+          last_sync: "2024-01-15T10:30:00Z",
+          webhook_url: "https://api.deedpro.io/webhooks/softpro"
+        },
+        {
+          id: 2,
+          name: "Qualia",
+          type: "qualia",
+          status: "active",
+          users_count: 67,
+          calls_today: 892,
+          last_sync: "2024-01-15T09:15:00Z"
         }
       ]);
 
@@ -217,12 +331,28 @@ export default function AdminDashboard() {
     <div style={{ minHeight: '100vh', backgroundColor: '#f8f9fa', padding: '2rem' }}>
       {/* Header */}
       <div style={{ marginBottom: '2rem', textAlign: 'center' }}>
-        <h1 style={{ fontSize: '2.5rem', color: '#6A49F2', marginBottom: '0.5rem' }}>
-          🛠️ DeedPro Admin Dashboard
+        <div className="mb-4">
+          <span className="inline-block bg-gradient-to-r from-blue-600 to-purple-600 text-white px-4 py-2 rounded-full text-sm font-semibold mb-4">
+            🚀 Enterprise Admin Console
+          </span>
+        </div>
+        <h1 style={{ fontSize: '3rem', background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent', marginBottom: '0.5rem', fontWeight: 'bold' }}>
+          DeedPro Admin Dashboard
         </h1>
-        <p style={{ fontSize: '1.1rem', color: '#6c757d' }}>
-          Comprehensive platform management and analytics
+        <p style={{ fontSize: '1.2rem', color: '#6c757d', marginBottom: '1rem' }}>
+          Comprehensive platform management, API monitoring, and enterprise analytics
         </p>
+        <div style={{ display: 'flex', justifyContent: 'center', gap: '1rem', flexWrap: 'wrap' }}>
+          <span style={{ backgroundColor: '#e3f2fd', color: '#1976d2', padding: '0.5rem 1rem', borderRadius: '20px', fontSize: '0.9rem', fontWeight: 'bold' }}>
+            ⚡ System Health: {stats.system_health}
+          </span>
+          <span style={{ backgroundColor: '#e8f5e8', color: '#2e7d32', padding: '0.5rem 1rem', borderRadius: '20px', fontSize: '0.9rem', fontWeight: 'bold' }}>
+            🔗 {stats.active_integrations} Active Integrations
+          </span>
+          <span style={{ backgroundColor: '#fff3e0', color: '#f57c00', padding: '0.5rem 1rem', borderRadius: '20px', fontSize: '0.9rem', fontWeight: 'bold' }}>
+            📊 {stats.api_calls_today.toLocaleString()} API Calls Today
+          </span>
+        </div>
       </div>
 
       {/* Navigation Tabs */}
@@ -233,11 +363,17 @@ export default function AdminDashboard() {
         <button onClick={() => setActiveTab('users')} style={tabStyle(activeTab === 'users')}>
           👥 User Management
         </button>
+        <button onClick={() => setActiveTab('api')} style={tabStyle(activeTab === 'api')}>
+          🔗 API & Integrations
+        </button>
         <button onClick={() => setActiveTab('deeds')} style={tabStyle(activeTab === 'deeds')}>
           📄 All Deeds
         </button>
         <button onClick={() => setActiveTab('revenue')} style={tabStyle(activeTab === 'revenue')}>
           💰 Revenue Analytics
+        </button>
+        <button onClick={() => setActiveTab('system')} style={tabStyle(activeTab === 'system')}>
+          ⚙️ System Health
         </button>
       </div>
 
@@ -247,19 +383,34 @@ export default function AdminDashboard() {
           {/* Key Metrics */}
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(250px, 1fr))', gap: '1rem', marginBottom: '2rem' }}>
             <div style={statCardStyle}>
-              <h3 style={{ color: '#6A49F2', margin: '0 0 0.5rem 0' }}>Total Users</h3>
+              <h3 style={{ color: '#6A49F2', margin: '0 0 0.5rem 0' }}>👥 Total Users</h3>
               <div style={{ fontSize: '2rem', fontWeight: 'bold', color: '#333' }}>{stats.total_users.toLocaleString()}</div>
               <div style={{ color: '#28a745', fontSize: '0.9rem' }}>{stats.active_users} active</div>
             </div>
             <div style={statCardStyle}>
-              <h3 style={{ color: '#6A49F2', margin: '0 0 0.5rem 0' }}>Total Deeds</h3>
+              <h3 style={{ color: '#6A49F2', margin: '0 0 0.5rem 0' }}>📄 Total Deeds</h3>
               <div style={{ fontSize: '2rem', fontWeight: 'bold', color: '#333' }}>{stats.total_deeds.toLocaleString()}</div>
               <div style={{ color: '#17a2b8', fontSize: '0.9rem' }}>{stats.deeds_this_month} this month</div>
             </div>
             <div style={statCardStyle}>
-              <h3 style={{ color: '#6A49F2', margin: '0 0 0.5rem 0' }}>Total Revenue</h3>
+              <h3 style={{ color: '#6A49F2', margin: '0 0 0.5rem 0' }}>💰 Total Revenue</h3>
               <div style={{ fontSize: '2rem', fontWeight: 'bold', color: '#333' }}>${stats.total_revenue.toLocaleString()}</div>
               <div style={{ color: '#28a745', fontSize: '0.9rem' }}>${stats.monthly_revenue} this month</div>
+            </div>
+            <div style={statCardStyle}>
+              <h3 style={{ color: '#6A49F2', margin: '0 0 0.5rem 0' }}>🔗 API Calls</h3>
+              <div style={{ fontSize: '2rem', fontWeight: 'bold', color: '#333' }}>{stats.api_calls_today.toLocaleString()}</div>
+              <div style={{ color: '#17a2b8', fontSize: '0.9rem' }}>{stats.api_calls_month.toLocaleString()} this month</div>
+            </div>
+            <div style={statCardStyle}>
+              <h3 style={{ color: '#6A49F2', margin: '0 0 0.5rem 0' }}>⚙️ System Health</h3>
+              <div style={{ fontSize: '2rem', fontWeight: 'bold', color: '#28a745' }}>{stats.system_health}</div>
+              <div style={{ color: '#17a2b8', fontSize: '0.9rem' }}>99.9% uptime</div>
+            </div>
+            <div style={statCardStyle}>
+              <h3 style={{ color: '#6A49F2', margin: '0 0 0.5rem 0' }}>🔗 Integrations</h3>
+              <div style={{ fontSize: '2rem', fontWeight: 'bold', color: '#333' }}>{stats.active_integrations}</div>
+              <div style={{ color: '#17a2b8', fontSize: '0.9rem' }}>SoftPro & Qualia</div>
             </div>
           </div>
 
@@ -299,6 +450,17 @@ export default function AdminDashboard() {
                 fontSize: '1rem'
               }}>
                 🔄 System Health Check
+              </button>
+              <button style={{
+                backgroundColor: '#ffc107',
+                color: '#000',
+                border: 'none',
+                padding: '1rem',
+                borderRadius: '8px',
+                cursor: 'pointer',
+                fontSize: '1rem'
+              }}>
+                🔑 Manage API Keys
               </button>
             </div>
           </div>
@@ -341,9 +503,9 @@ export default function AdminDashboard() {
                 <th style={thStyle}>Email</th>
                 <th style={thStyle}>Plan</th>
                 <th style={thStyle}>Status</th>
-                <th style={thStyle}>Deeds</th>
+                <th style={thStyle}>API Usage</th>
+                <th style={thStyle}>Integrations</th>
                 <th style={thStyle}>Revenue</th>
-                <th style={thStyle}>Last Login</th>
                 <th style={thStyle}>Actions</th>
               </tr>
             </thead>
@@ -353,12 +515,12 @@ export default function AdminDashboard() {
                   <td style={tdStyle}>
                     <strong>{user.first_name} {user.last_name}</strong>
                     <br />
-                    <small style={{ color: '#6c757d' }}>ID: {user.id}</small>
+                    <small style={{ color: '#6c757d' }}>{user.company} • {user.role}</small>
                   </td>
                   <td style={tdStyle}>{user.email}</td>
                   <td style={tdStyle}>
                     <span style={{
-                      backgroundColor: user.subscription_plan === 'pro' ? '#6f42c1' : user.subscription_plan === 'basic' ? '#17a2b8' : '#6c757d',
+                      backgroundColor: user.subscription_plan === 'enterprise' ? '#6f42c1' : user.subscription_plan === 'professional' ? '#17a2b8' : '#6c757d',
                       color: 'white',
                       padding: '0.25rem 0.5rem',
                       borderRadius: '4px',
@@ -368,9 +530,25 @@ export default function AdminDashboard() {
                     </span>
                   </td>
                   <td style={tdStyle}>{getStatusBadge(user.subscription_status)}</td>
-                  <td style={tdStyle}>{user.total_deeds}</td>
+                  <td style={tdStyle}>
+                    <div>{user.api_calls_this_month} calls</div>
+                    <small style={{ color: '#6c757d' }}>{user.api_key ? 'API Key Active' : 'No API Access'}</small>
+                  </td>
+                  <td style={tdStyle}>
+                    {user.integrations.map((integration, idx) => (
+                      <span key={idx} style={{
+                        backgroundColor: '#e3f2fd',
+                        color: '#1976d2',
+                        padding: '0.25rem 0.5rem',
+                        borderRadius: '4px',
+                        fontSize: '0.75rem',
+                        marginRight: '0.25rem'
+                      }}>
+                        {integration}
+                      </span>
+                    ))}
+                  </td>
                   <td style={tdStyle}>${user.monthly_revenue}</td>
-                  <td style={tdStyle}>{new Date(user.last_login).toLocaleDateString()}</td>
                   <td style={tdStyle}>
                     <button style={{
                       backgroundColor: '#17a2b8',
@@ -400,6 +578,90 @@ export default function AdminDashboard() {
               ))}
             </tbody>
           </table>
+        </div>
+      )}
+
+      {/* API & Integrations Tab */}
+      {activeTab === 'api' && (
+        <div>
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '2rem', marginBottom: '2rem' }}>
+            <div style={cardStyle}>
+              <h3 style={{ color: '#6A49F2', marginBottom: '1rem' }}>🔗 API Usage Overview</h3>
+              <div style={{ marginBottom: '1rem' }}>
+                <div style={{ fontSize: '1.1rem', marginBottom: '0.5rem' }}>Total API Calls Today</div>
+                <div style={{ fontSize: '2rem', fontWeight: 'bold', color: '#28a745' }}>
+                  {stats.api_calls_today.toLocaleString()}
+                </div>
+              </div>
+              <div style={{ marginBottom: '1rem' }}>
+                <div style={{ fontSize: '1.1rem', marginBottom: '0.5rem' }}>Monthly API Calls</div>
+                <div style={{ fontSize: '1.5rem', fontWeight: 'bold', color: '#17a2b8' }}>
+                  {stats.api_calls_month.toLocaleString()}
+                </div>
+              </div>
+              <div>
+                <div style={{ fontSize: '1.1rem', marginBottom: '0.5rem' }}>Active API Keys</div>
+                <div style={{ fontSize: '1.2rem', fontWeight: 'bold', color: '#6A49F2' }}>
+                  {users.filter(u => u.api_key).length}
+                </div>
+              </div>
+            </div>
+
+            <div style={cardStyle}>
+              <h3 style={{ color: '#6A49F2', marginBottom: '1rem' }}>🔗 Integration Status</h3>
+              {integrations.map(integration => (
+                <div key={integration.id} style={{ marginBottom: '1rem', padding: '1rem', border: '1px solid #dee2e6', borderRadius: '8px' }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.5rem' }}>
+                    <strong>{integration.name}</strong>
+                    <span style={{
+                      backgroundColor: integration.status === 'active' ? '#28a745' : '#dc3545',
+                      color: 'white',
+                      padding: '0.25rem 0.5rem',
+                      borderRadius: '4px',
+                      fontSize: '0.875rem'
+                    }}>
+                      {integration.status}
+                    </span>
+                  </div>
+                  <div style={{ fontSize: '0.9rem', color: '#6c757d' }}>
+                    {integration.users_count} users • {integration.calls_today} calls today
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+
+          <div style={cardStyle}>
+            <h3 style={{ color: '#6A49F2', marginBottom: '1rem' }}>📊 API Usage by Endpoint</h3>
+            <table style={tableStyle}>
+              <thead>
+                <tr>
+                  <th style={thStyle}>User</th>
+                  <th style={thStyle}>Endpoint</th>
+                  <th style={thStyle}>Calls Today</th>
+                  <th style={thStyle}>Calls Month</th>
+                  <th style={thStyle}>Last Call</th>
+                  <th style={thStyle}>Status</th>
+                </tr>
+              </thead>
+              <tbody>
+                {apiUsage.map((usage, index) => (
+                  <tr key={index}>
+                    <td style={tdStyle}>{usage.user_email}</td>
+                    <td style={tdStyle}>
+                      <code style={{ backgroundColor: '#f8f9fa', padding: '0.25rem 0.5rem', borderRadius: '4px' }}>
+                        {usage.endpoint}
+                      </code>
+                    </td>
+                    <td style={tdStyle}>{usage.calls_today}</td>
+                    <td style={tdStyle}>{usage.calls_month.toLocaleString()}</td>
+                    <td style={tdStyle}>{new Date(usage.last_call).toLocaleString()}</td>
+                    <td style={tdStyle}>{getStatusBadge(usage.status)}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
         </div>
       )}
 
@@ -441,8 +703,8 @@ export default function AdminDashboard() {
                 <th style={thStyle}>Property</th>
                 <th style={thStyle}>Type</th>
                 <th style={thStyle}>Status</th>
+                <th style={thStyle}>AI/API</th>
                 <th style={thStyle}>Created</th>
-                <th style={thStyle}>Shares</th>
                 <th style={thStyle}>Actions</th>
               </tr>
             </thead>
@@ -460,12 +722,26 @@ export default function AdminDashboard() {
                   <td style={tdStyle}>{deed.property_address}</td>
                   <td style={tdStyle}>{deed.deed_type}</td>
                   <td style={tdStyle}>{getStatusBadge(deed.status)}</td>
-                  <td style={tdStyle}>{new Date(deed.created_at).toLocaleDateString()}</td>
                   <td style={tdStyle}>
-                    <span style={{ color: '#17a2b8' }}>{deed.shared_count} shared</span>
-                    <br />
-                    <span style={{ color: '#28a745' }}>{deed.approval_count} approved</span>
+                    <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap' }}>
+                      {deed.ai_assistance_used && (
+                        <span style={{ backgroundColor: '#e3f2fd', color: '#1976d2', padding: '0.25rem 0.5rem', borderRadius: '4px', fontSize: '0.75rem' }}>
+                          🤖 AI
+                        </span>
+                      )}
+                      {deed.api_generated && (
+                        <span style={{ backgroundColor: '#e8f5e8', color: '#2e7d32', padding: '0.25rem 0.5rem', borderRadius: '4px', fontSize: '0.75rem' }}>
+                          🔗 API
+                        </span>
+                      )}
+                      {deed.integration_source && (
+                        <span style={{ backgroundColor: '#fff3e0', color: '#f57c00', padding: '0.25rem 0.5rem', borderRadius: '4px', fontSize: '0.75rem' }}>
+                          {deed.integration_source}
+                        </span>
+                      )}
+                    </div>
                   </td>
+                  <td style={tdStyle}>{new Date(deed.created_at).toLocaleDateString()}</td>
                   <td style={tdStyle}>
                     <button style={{
                       backgroundColor: '#17a2b8',
@@ -528,21 +804,21 @@ export default function AdminDashboard() {
               <h3 style={{ color: '#6A49F2', marginBottom: '1rem' }}>📊 Subscription Breakdown</h3>
               <div style={{ marginBottom: '1rem' }}>
                 <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '0.5rem' }}>
-                  <span>Pro Plan</span>
+                  <span>Enterprise API</span>
                   <span style={{ fontWeight: 'bold' }}>268 users</span>
                 </div>
                 <div style={{ backgroundColor: '#6f42c1', height: '8px', borderRadius: '4px', marginBottom: '1rem' }}></div>
               </div>
               <div style={{ marginBottom: '1rem' }}>
                 <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '0.5rem' }}>
-                  <span>Basic Plan</span>
+                  <span>Professional</span>
                   <span style={{ fontWeight: 'bold' }}>523 users</span>
                 </div>
                 <div style={{ backgroundColor: '#17a2b8', height: '8px', borderRadius: '4px', marginBottom: '1rem' }}></div>
               </div>
               <div>
                 <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '0.5rem' }}>
-                  <span>Free Plan</span>
+                  <span>Starter</span>
                   <span style={{ fontWeight: 'bold' }}>456 users</span>
                 </div>
                 <div style={{ backgroundColor: '#6c757d', height: '8px', borderRadius: '4px' }}></div>
@@ -567,7 +843,7 @@ export default function AdminDashboard() {
                   <td style={tdStyle}>🥇 1</td>
                   <td style={tdStyle}>john@example.com</td>
                   <td style={tdStyle}><strong>$359.88</strong></td>
-                  <td style={tdStyle}>{getStatusBadge('pro')}</td>
+                  <td style={tdStyle}>{getStatusBadge('enterprise')}</td>
                   <td style={tdStyle}>
                     <button style={{
                       backgroundColor: '#17a2b8',
@@ -586,7 +862,7 @@ export default function AdminDashboard() {
                   <td style={tdStyle}>🥈 2</td>
                   <td style={tdStyle}>sarah@lawfirm.com</td>
                   <td style={tdStyle}><strong>$299.88</strong></td>
-                  <td style={tdStyle}>{getStatusBadge('pro')}</td>
+                  <td style={tdStyle}>{getStatusBadge('enterprise')}</td>
                   <td style={tdStyle}>
                     <button style={{
                       backgroundColor: '#17a2b8',
@@ -605,7 +881,7 @@ export default function AdminDashboard() {
                   <td style={tdStyle}>🥉 3</td>
                   <td style={tdStyle}>mike@realty.com</td>
                   <td style={tdStyle}><strong>$239.91</strong></td>
-                  <td style={tdStyle}>{getStatusBadge('basic')}</td>
+                  <td style={tdStyle}>{getStatusBadge('professional')}</td>
                   <td style={tdStyle}>
                     <button style={{
                       backgroundColor: '#17a2b8',
@@ -622,6 +898,111 @@ export default function AdminDashboard() {
                 </tr>
               </tbody>
             </table>
+          </div>
+        </div>
+      )}
+
+      {/* System Health Tab */}
+      {activeTab === 'system' && (
+        <div>
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '2rem', marginBottom: '2rem' }}>
+            <div style={cardStyle}>
+              <h3 style={{ color: '#6A49F2', marginBottom: '1rem' }}>⚙️ System Status</h3>
+              <div style={{ marginBottom: '1rem' }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.5rem' }}>
+                  <span>Main API</span>
+                  <span style={{ color: '#28a745', fontWeight: 'bold' }}>✅ Healthy</span>
+                </div>
+                <div style={{ backgroundColor: '#28a745', height: '8px', borderRadius: '4px', marginBottom: '1rem' }}></div>
+              </div>
+              <div style={{ marginBottom: '1rem' }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.5rem' }}>
+                  <span>External API</span>
+                  <span style={{ color: '#28a745', fontWeight: 'bold' }}>✅ Healthy</span>
+                </div>
+                <div style={{ backgroundColor: '#28a745', height: '8px', borderRadius: '4px', marginBottom: '1rem' }}></div>
+              </div>
+              <div style={{ marginBottom: '1rem' }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.5rem' }}>
+                  <span>Database</span>
+                  <span style={{ color: '#28a745', fontWeight: 'bold' }}>✅ Healthy</span>
+                </div>
+                <div style={{ backgroundColor: '#28a745', height: '8px', borderRadius: '4px', marginBottom: '1rem' }}></div>
+              </div>
+              <div>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.5rem' }}>
+                  <span>AI Services</span>
+                  <span style={{ color: '#28a745', fontWeight: 'bold' }}>✅ Healthy</span>
+                </div>
+                <div style={{ backgroundColor: '#28a745', height: '8px', borderRadius: '4px' }}></div>
+              </div>
+            </div>
+
+            <div style={cardStyle}>
+              <h3 style={{ color: '#6A49F2', marginBottom: '1rem' }}>📊 Performance Metrics</h3>
+              <div style={{ marginBottom: '1rem' }}>
+                <div style={{ fontSize: '1.1rem', marginBottom: '0.5rem' }}>Uptime</div>
+                <div style={{ fontSize: '2rem', fontWeight: 'bold', color: '#28a745' }}>99.9%</div>
+              </div>
+              <div style={{ marginBottom: '1rem' }}>
+                <div style={{ fontSize: '1.1rem', marginBottom: '0.5rem' }}>Response Time</div>
+                <div style={{ fontSize: '1.5rem', fontWeight: 'bold', color: '#17a2b8' }}>45ms</div>
+              </div>
+              <div>
+                <div style={{ fontSize: '1.1rem', marginBottom: '0.5rem' }}>Error Rate</div>
+                <div style={{ fontSize: '1.2rem', fontWeight: 'bold', color: '#6A49F2' }}>0.01%</div>
+              </div>
+            </div>
+          </div>
+
+          <div style={cardStyle}>
+            <h3 style={{ color: '#6A49F2', marginBottom: '1rem' }}>🔧 System Actions</h3>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '1rem' }}>
+              <button style={{
+                backgroundColor: '#28a745',
+                color: 'white',
+                border: 'none',
+                padding: '1rem',
+                borderRadius: '8px',
+                cursor: 'pointer',
+                fontSize: '1rem'
+              }}>
+                🔄 Restart Services
+              </button>
+              <button style={{
+                backgroundColor: '#17a2b8',
+                color: 'white',
+                border: 'none',
+                padding: '1rem',
+                borderRadius: '8px',
+                cursor: 'pointer',
+                fontSize: '1rem'
+              }}>
+                📊 View Logs
+              </button>
+              <button style={{
+                backgroundColor: '#ffc107',
+                color: '#000',
+                border: 'none',
+                padding: '1rem',
+                borderRadius: '8px',
+                cursor: 'pointer',
+                fontSize: '1rem'
+              }}>
+                🔧 Maintenance Mode
+              </button>
+              <button style={{
+                backgroundColor: '#dc3545',
+                color: 'white',
+                border: 'none',
+                padding: '1rem',
+                borderRadius: '8px',
+                cursor: 'pointer',
+                fontSize: '1rem'
+              }}>
+                🚨 Emergency Stop
+              </button>
+            </div>
           </div>
         </div>
       )}
